@@ -1,0 +1,26 @@
+export const serviceOptions = ["Photography", "Video", "Drone"] as const;
+
+export type CreatorService = (typeof serviceOptions)[number];
+
+export type Creator = {
+  id: string;
+  display_name: string;
+  city: string;
+  services: CreatorService[];
+  portfolio_url: string;
+  starting_rate: number;
+  bio: string;
+  travel_miles: number;
+  avatar_url: string | null;
+};
+
+export function creatorTitle(services: CreatorService[]) {
+  if (services.includes("Video")) {
+    return services.includes("Photography") ? "Surf photographer and videographer" : "Surf videographer";
+  }
+  return "Surf photographer";
+}
+
+export function hourlyRate(creator: Pick<Creator, "starting_rate">) {
+  return `$${creator.starting_rate}/hr`;
+}

@@ -1,0 +1,27 @@
+import { supabase } from "@/lib/supabase";
+import { router, useFocusEffect } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+type BookingRequest = { id: string; service_type: string; session_date: string; session_hours: number; surf_spot: string; status: "pending" | "accepted" | "declined" | "cancelled"; creator: { display_name: string }[] | null };
+
+export default function RequestsScreen() {
+  const [requests, setRequests] = useState<BookingRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const loadRequests = useCallback(async () => {
+    setIsLoading(true); setMessage("");
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) { setMessage("Sign in to see your booking requests."); setRequests([]); return; }
+      const { data, error } = await supabase.from("booking_requests").select("id, service_type, session_date, session_hours, surf_spot, status, creator:creator_profiles(display_name)").order("created_at", { ascending: false });
+      if (error) throw error;
+      setRequests((data ?? []) as BookingRequest[]);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not load your booking requests."); }
+    finally { setIsLoading(false); }
+  }, []);
+  useFocusEffect(useCallback(() => { void loadRequests(); }, [loadRequests]));
+  return <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic"><StatusBar style="light" /><Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable><Text style={styles.eyebrow}>YOUR SESSIONS</Text><Text style={styles.title}>Booking requests</Text><Text style={styles.subtitle}>Track the photographers and videographers you have contacted.</Text>{isLoading ? <View style={styles.state}><ActivityIndicator color="#56d6c9" /><Text style={styles.stateText}>Loading requests...</Text></View> : message ? <View style={styles.state}><Text style={styles.stateText}>{message}</Text><Pressable accessibilityRole="button" onPress={() => router.push("/")} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Sign in</Text></Pressable></View> : requests.length === 0 ? <View style={styles.state}><Text style={styles.emptyTitle}>No requests yet</Text><Text style={styles.stateText}>Find a creator near your next surf session to get started.</Text><Pressable accessibilityRole="button" onPress={() => router.push("/location")} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Find a creator</Text></Pressable></View> : <View style={styles.list}>{requests.map((request) => <View key={request.id} style={styles.card}><View style={styles.cardHeader}><View><Text style={styles.creatorName}>{request.creator?.[0]?.display_name ?? "WaveLens creator"}</Text><Text style={styles.sessionInfo}>{request.service_type} · {request.session_hours} {request.session_hours === 1 ? "hour" : "hours"} · {request.session_date}</Text><Text style={styles.spot}>{request.surf_spot}</Text></View><View style={[styles.status, request.status === "accepted" ? styles.accepted : request.status === "declined" ? styles.declined : styles.pending]}><Text style={styles.statusText}>{request.status}</Text></View></View></View>)}</View>}</ScrollView>;
+}
+const styles = StyleSheet.create({ screen: { flexGrow: 1, backgroundColor: "#061827", padding: 20, paddingBottom: 44 }, backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingRight: 24 }, backButtonText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" }, eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.5, marginTop: 16 }, title: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, marginTop: 10 }, subtitle: { color: "#b9c9d6", fontSize: 16, lineHeight: 23, marginTop: 10 }, state: { alignItems: "center", gap: 14, paddingHorizontal: 20, paddingTop: 96 }, emptyTitle: { color: "#ffffff", fontSize: 23, fontWeight: "800" }, stateText: { color: "#b9c9d6", fontSize: 16, lineHeight: 23, textAlign: "center" }, primaryButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 16, justifyContent: "center", marginTop: 10, minHeight: 52, paddingHorizontal: 20 }, primaryButtonText: { color: "#061827", fontSize: 15, fontWeight: "800" }, list: { gap: 12, marginTop: 30 }, card: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.13)", borderRadius: 18, borderWidth: 1, padding: 17 }, cardHeader: { alignItems: "flex-start", flexDirection: "row", gap: 12, justifyContent: "space-between" }, creatorName: { color: "#ffffff", fontSize: 18, fontWeight: "800" }, sessionInfo: { color: "#b9c9d6", fontSize: 14, marginTop: 6 }, spot: { color: "#7ce0d6", fontSize: 13, fontWeight: "700", marginTop: 7 }, status: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }, pending: { backgroundColor: "rgba(245, 184, 65, 0.18)" }, accepted: { backgroundColor: "rgba(86, 214, 201, 0.16)" }, declined: { backgroundColor: "rgba(240, 112, 112, 0.16)" }, statusText: { color: "#ffffff", fontSize: 12, fontWeight: "800", textTransform: "capitalize" } });

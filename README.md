@@ -1,50 +1,36 @@
-# Welcome to your Expo app 👋
+# WaveLens
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+WaveLens is a mobile-first marketplace for surfers to find local photographers, videographers, and drone creators for a chosen surf break.
 
-## Get started
+## What the launch version does
 
-1. Install dependencies
+- Lets a surfer select a Bay Area surf spot or use foreground location to sort nearby breaks
+- Shows approved creator profiles with portfolio, services, travel range, and hourly rate
+- Sends a booking request with surf spot, date, session length, notes, and contact details
+- Lets customers track request status and creators accept or decline requests
+- Lets prospective creators submit a profile for review
 
-   ```bash
-   npm install
-   ```
+WaveLens does not process payments in version 1. Payment and any final scope are arranged directly after a creator accepts a request.
 
-2. Start the app
+## Run locally
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+For the web preview:
 
-## Learn more
+```powershell
+npx expo start --web --port 8081
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Backend setup
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Create a Supabase project, then supply only its client-safe URL and anon/publishable key as `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` in `.env.local`.
 
-## Join the community
+Run the migrations in order and approve real creators using [SUPABASE_SETUP.md](SUPABASE_SETUP.md). Do not put a Supabase service-role key in the app.
 
-Join our community of developers creating universal apps.
+## Release
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The exact App Store preparation steps are in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md), and the listing copy is in [APP_STORE_METADATA.md](APP_STORE_METADATA.md).

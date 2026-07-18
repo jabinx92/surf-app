@@ -8,6 +8,8 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { StyleSheet, View } from "react-native";
+
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -15,18 +17,59 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const baseTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+
+  const navigationTheme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      background: "#061827",
+      card: "#061827",
+    },
+  };
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="location" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+  <ThemeProvider value={navigationTheme}>
+    <View style={styles.root}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "#061827",
+          },
+          animation: "slide_from_right",
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="location" />
+        <Stack.Screen name="creators" />
+        <Stack.Screen name="creators/[id]" />
+        <Stack.Screen name="book" />
+        <Stack.Screen name="requests" />
+        <Stack.Screen name="become-a-creator" />
+        <Stack.Screen name="creator-requests" />
+        <Stack.Screen name="account" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="support" />
+
         <Stack.Screen
           name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
+          options={{
+            presentation: "modal",
+            title: "Modal",
+          }}
         />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+
+      <StatusBar style="light" />
+    </View>
+  </ThemeProvider>
+);
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#061827",
+  },
+});
