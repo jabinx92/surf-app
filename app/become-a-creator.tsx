@@ -58,7 +58,7 @@ export default function BecomeACreatorScreen() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
         Alert.alert("Sign in first", "Create or sign in to a WaveLens account before applying.");
-        router.replace("/");
+        router.replace("/sign-in");
         return;
       }
 
@@ -75,17 +75,13 @@ export default function BecomeACreatorScreen() {
 
       if (error) {
         if (error.code === "23505") {
-          Alert.alert("Application received", "You already have a WaveLens creator application under review.");
+          router.replace("/creator-application-status");
           return;
         }
         throw error;
       }
 
-      Alert.alert(
-        "Application sent",
-        "We will review your portfolio before listing you to surfers."
-      );
-      router.replace("/");
+      router.replace("/creator-application-status");
     } catch (error) {
       Alert.alert(
         "Could not send application",

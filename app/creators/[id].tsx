@@ -9,16 +9,19 @@ export default function CreatorProfileScreen() {
   const { id, spot } = useLocalSearchParams<{ id: string; spot?: string }>();
   const [creator, setCreator] = useState<Creator | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [reviews, setReviews] = useState<{ id: string; rating: number; comment: string; created_at: string }[]>([]);
 
   const loadCreator = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url")
+      .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url, is_verified")
       .eq("id", id)
       .eq("is_listed", true)
       .maybeSingle();
     setCreator(error ? null : (data as Creator | null));
+    const { data: reviewData } = await supabase.from("creator_reviews").select("id, rating, comment, created_at").eq("creator_profile_id", id).order("created_at", { ascending: false }).limit(20);
+    setReviews(reviewData ?? []);
     setIsLoading(false);
   }, [id]);
 
@@ -50,11 +53,13 @@ export default function CreatorProfileScreen() {
       <View style={styles.hero}><Text style={styles.heroInitial}>{creator.display_name.charAt(0).toUpperCase()}</Text></View>
       <View style={styles.content}>
         <Text style={styles.eyebrow}>{creatorTitle(creator.services).toUpperCase()}</Text>
-        <Text style={styles.title}>{creator.display_name}</Text>
+        <View style={styles.nameRow}><Text style={styles.title}>{creator.display_name}</Text>{creator.is_verified ? <View style={styles.verified}><Text style={styles.verifiedText}>✓ VERIFIED CREATOR</Text></View> : null}</View>
         <Text style={styles.meta}>{creator.city} - travels up to {creator.travel_miles} miles</Text>
         <Text style={styles.description}>{creator.bio || "Surf sessions captured with a local eye and a focus on the moments that matter."}</Text>
         <View style={styles.services}>{creator.services.map((service) => <View key={service} style={styles.serviceBadge}><Text style={styles.serviceText}>{service}</Text></View>)}</View>
         <Pressable accessibilityRole="link" onPress={() => void openPortfolio()} style={styles.portfolioButton}><Text style={styles.portfolioText}>View portfolio</Text></Pressable>
+        <View style={styles.reviewSection}><Text style={styles.reviewHeading}>REVIEWS {reviews.length ? `· ${(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)} ★` : ""}</Text>{reviews.length === 0 ? <Text style={styles.noReviews}>No reviews yet.</Text> : reviews.map(review => <View key={review.id} style={styles.review}><Text style={styles.reviewStars}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</Text>{review.comment ? <Text selectable style={styles.reviewComment}>{review.comment}</Text> : null}</View>)}</View>
+        <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/report", params: { creatorId: creator.id } })} style={styles.reportButton}><Text style={styles.reportText}>Report this profile</Text></Pressable>
         <View style={styles.bookingRow}><View><Text style={styles.rateLabel}>STARTING HOURLY RATE</Text><Text style={styles.rate}>{hourlyRate(creator)}</Text></View><Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/book", params: { creatorId: creator.id, ...(spot ? { spot } : {}) } })} style={styles.bookButton}><Text style={styles.bookButtonText}>Request to book</Text></Pressable></View>
       </View>
     </ScrollView>
@@ -71,6 +76,9 @@ const styles = StyleSheet.create({
   content: { paddingTop: 24 },
   eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.4 },
   title: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, lineHeight: 44, marginTop: 8 },
+  nameRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  verified: { backgroundColor: "rgba(86,214,201,.14)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+  verifiedText: { color: "#7ce0d6", fontSize: 10, fontWeight: "900", letterSpacing: .7 },
   meta: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 8 },
   description: { color: "#d9e5ec", fontSize: 17, lineHeight: 26, marginTop: 22 },
   services: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 22 },
@@ -78,6 +86,14 @@ const styles = StyleSheet.create({
   serviceText: { color: "#ffffff", fontSize: 13, fontWeight: "700" },
   portfolioButton: { alignSelf: "flex-start", borderColor: "rgba(124,224,214,0.5)", borderRadius: 12, borderWidth: 1, marginTop: 22, minHeight: 46, justifyContent: "center", paddingHorizontal: 16 },
   portfolioText: { color: "#7ce0d6", fontSize: 14, fontWeight: "800" },
+  reviewSection: { borderTopColor: "rgba(255,255,255,.12)", borderTopWidth: 1, gap: 10, marginTop: 28, paddingTop: 22 },
+  reviewHeading: { color: "#91a8b8", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
+  noReviews: { color: "#698596", fontSize: 14 },
+  review: { backgroundColor: "rgba(255,255,255,.05)", borderRadius: 15, padding: 14 },
+  reviewStars: { color: "#f5b841", fontSize: 16 },
+  reviewComment: { color: "#d9e5ec", fontSize: 14, lineHeight: 21, marginTop: 7 },
+  reportButton: { alignSelf: "flex-start", marginTop: 18, minHeight: 42, justifyContent: "center" },
+  reportText: { color: "#91a8b8", fontSize: 13, fontWeight: "700" },
   bookingRow: { alignItems: "center", borderTopColor: "rgba(255, 255, 255, 0.12)", borderTopWidth: 1, flexDirection: "row", gap: 16, justifyContent: "space-between", marginTop: 32, paddingTop: 24 },
   rateLabel: { color: "#91a8b8", fontSize: 10, fontWeight: "800", letterSpacing: 1.1 },
   rate: { color: "#ffffff", fontSize: 22, fontWeight: "800", marginTop: 3 },

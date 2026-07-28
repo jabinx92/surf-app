@@ -10,6 +10,9 @@ type CreatorCardProps = {
 
 export default function CreatorCard({ creator, spot }: CreatorCardProps) {
   const hasAvatar = Boolean(creator.avatar_url);
+  const matchingAvailability = creator.availability?.filter((slot) => !spot || !slot.surf_spot || slot.surf_spot === spot) ?? [];
+  const weekdayNames = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const availableDays = [...new Set(matchingAvailability.map(slot => weekdayNames[slot.weekday]))].join(", ");
 
   return (
     <Pressable
@@ -31,12 +34,13 @@ export default function CreatorCard({ creator, spot }: CreatorCardProps) {
       </View>
 
       <View style={styles.info}>
-        <Text selectable style={styles.name}>{creator.display_name}</Text>
+        <View style={styles.nameRow}><Text selectable style={styles.name}>{creator.display_name}</Text>{creator.is_verified ? <View style={styles.verified}><Text style={styles.verifiedText}>✓ VERIFIED</Text></View> : null}</View>
         <Text selectable style={styles.title}>{creatorTitle(creator.services)}</Text>
         <View style={styles.metaRow}><Text selectable style={styles.location}>{creator.city}</Text><View style={styles.metaDot} /><Text selectable style={styles.travel}>{creator.travel_miles} mi travel</Text></View>
         <View style={styles.badges}>
           {creator.services.map((service) => <View key={service} style={styles.badge}><Text style={styles.badgeText}>{service}</Text></View>)}
         </View>
+        {matchingAvailability.length ? <Text style={styles.nextSlot}>Usually available: {availableDays}</Text> : <Text style={styles.noSlot}>Contact creator for availability</Text>}
         <View style={styles.footer}><Text style={styles.viewText}>View profile</Text><View style={styles.arrowCircle}><Text style={styles.arrow}>-&gt;</Text></View></View>
       </View>
     </Pressable>
@@ -58,6 +62,9 @@ const styles = StyleSheet.create({
   pricePillText: { color: "#061827", fontSize: 13, fontWeight: "900" },
   info: { padding: 18 },
   name: { color: "#ffffff", fontSize: 24, fontWeight: "800", letterSpacing: -0.7 },
+  nameRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 9 },
+  verified: { backgroundColor: "rgba(86,214,201,.14)", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
+  verifiedText: { color: "#7ce0d6", fontSize: 9, fontWeight: "900", letterSpacing: .7 },
   title: { color: "#98b9c9", fontSize: 14, lineHeight: 20, marginTop: 5 },
   metaRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 },
   location: { color: "#d9e5ec", fontSize: 13, fontWeight: "700" },
@@ -66,6 +73,8 @@ const styles = StyleSheet.create({
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 14 },
   badge: { backgroundColor: "rgba(86,214,201,0.1)", borderColor: "rgba(86,214,201,0.18)", borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
   badgeText: { color: "#8aede2", fontSize: 11, fontWeight: "800" },
+  nextSlot: { color: "#7ce0d6", fontSize: 13, fontWeight: "800", marginTop: 14 },
+  noSlot: { color: "#698596", fontSize: 13, marginTop: 14 },
   footer: { alignItems: "center", borderTopColor: "rgba(255,255,255,0.1)", borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", marginTop: 18, paddingTop: 15 },
   viewText: { color: "#ffffff", fontSize: 14, fontWeight: "800" },
   arrowCircle: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 15, height: 30, justifyContent: "center", width: 30 },

@@ -21,19 +21,25 @@ export default function CreatorsScreen() {
     try {
       const { data, error } = await supabase
         .from("creator_profiles")
-        .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url")
+        .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url, is_verified, availability:creator_weekly_availability(weekday, start_time, end_time, surf_spot)")
         .eq("is_listed", true)
         .order("created_at", { ascending: false });
       if (error) {
         throw error;
       }
-      setCreators((data ?? []) as Creator[]);
+      const nextCreators = (data ?? []) as Creator[];
+      nextCreators.sort((first, second) => {
+        const firstMatch = first.availability?.some((slot) => !spot || !slot.surf_spot || slot.surf_spot === spot) ? 1 : 0;
+        const secondMatch = second.availability?.some((slot) => !spot || !slot.surf_spot || slot.surf_spot === spot) ? 1 : 0;
+        return secondMatch - firstMatch;
+      });
+      setCreators(nextCreators);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not load creators right now.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [spot]);
 
   useFocusEffect(useCallback(() => { void loadCreators(); }, [loadCreators]));
 

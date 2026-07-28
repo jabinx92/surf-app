@@ -12,6 +12,8 @@ export type Creator = {
   bio: string;
   travel_miles: number;
   avatar_url: string | null;
+  is_verified: boolean;
+  availability?: { weekday: number; start_time: string; end_time: string; surf_spot: string }[];
 };
 
 export function creatorTitle(services: CreatorService[]) {

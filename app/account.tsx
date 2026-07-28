@@ -9,11 +9,18 @@ export default function AccountScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const loadAccount = useCallback(async () => {
     setIsLoading(true);
     const { data } = await supabase.auth.getUser();
     setEmail(data.user?.email ?? null);
+    if (data.user) {
+      const { data: adminAccess } = await supabase.rpc("is_wavelens_admin");
+      setIsAdmin(Boolean(adminAccess));
+    } else {
+      setIsAdmin(false);
+    }
     setIsLoading(false);
   }, []);
 
@@ -69,12 +76,15 @@ export default function AccountScreen() {
         <View style={styles.emailCard}><Text style={styles.emailLabel}>SIGNED IN AS</Text><Text selectable style={styles.email}>{email}</Text></View>
         <Pressable accessibilityRole="button" onPress={() => router.push("/requests")} style={styles.primaryButton}><Text style={styles.primaryText}>My booking requests</Text></Pressable>
         <Pressable accessibilityRole="button" onPress={() => router.push("/creator-requests")} style={styles.secondaryButton}><Text style={styles.secondaryText}>Creator dashboard</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.push("/availability")} style={styles.secondaryButton}><Text style={styles.secondaryText}>Manage availability</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.push("/notifications")} style={styles.secondaryButton}><Text style={styles.secondaryText}>Notifications</Text></Pressable>
+        {isAdmin ? <Pressable accessibilityRole="button" onPress={() => router.push("/admin")} style={styles.primaryButton}><Text style={styles.primaryText}>Admin approvals</Text></Pressable> : null}
         <Pressable accessibilityRole="button" onPress={() => router.push("/become-a-creator")} style={styles.secondaryButton}><Text style={styles.secondaryText}>Apply as a creator</Text></Pressable>
         <Pressable accessibilityRole="link" onPress={() => router.push("/privacy")} style={styles.privacyButton}><Text style={styles.privacyText}>Privacy policy</Text></Pressable>
         <Pressable accessibilityRole="link" onPress={() => router.push("/support" as Href)} style={styles.privacyButton}><Text style={styles.privacyText}>Help and support</Text></Pressable>
         <Pressable accessibilityRole="button" disabled={isSigningOut || isDeleting} onPress={() => void signOut()} style={styles.signOutButton}><Text style={styles.signOutText}>{isSigningOut ? "Signing out..." : "Sign out"}</Text></Pressable>
         <View style={styles.dangerZone}><Text style={styles.dangerTitle}>Delete account</Text><Text selectable style={styles.dangerText}>Permanently delete your account, creator profile, and booking data.</Text><Pressable accessibilityRole="button" disabled={isDeleting || isSigningOut} onPress={requestDeletion} style={[styles.deleteButton, isDeleting && styles.disabledButton]}><Text style={styles.deleteText}>{isDeleting ? "Deleting account..." : "Delete account"}</Text></Pressable></View>
-      </View> : <View style={styles.state}><Text style={styles.stateTitle}>You are not signed in</Text><Text style={styles.stateText}>Sign in or create an account to send and manage booking requests.</Text><Pressable accessibilityRole="button" onPress={() => router.replace("/")} style={styles.primaryButton}><Text style={styles.primaryText}>Go to sign in</Text></Pressable></View>}
+      </View> : <View style={styles.state}><Text style={styles.stateTitle}>You are not signed in</Text><Text style={styles.stateText}>Sign in or create an account to send and manage booking requests.</Text><Pressable accessibilityRole="button" onPress={() => router.replace("/sign-in")} style={styles.primaryButton}><Text style={styles.primaryText}>Go to sign in</Text></Pressable></View>}
     </ScrollView>
   );
 }

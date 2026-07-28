@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -18,57 +17,64 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"error" | "success">("error");
 
   async function signUp() {
     if (!email.trim() || !password) {
-      Alert.alert("Missing information", "Enter an email and password.");
+      setMessageType("error");
+      setMessage("Enter an email and password.");
       return;
     }
 
+    setMessage("");
     setLoading(true);
-
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      Alert.alert("Sign-up failed", error.message);
-      return;
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw error;
+      if (!data.session) {
+        setMessageType("success");
+        setMessage("Account created. Check your email for the confirmation link, then sign in.");
+        return;
+      }
+      setMessageType("success");
+      setMessage("Your account was created. You are now signed in.");
+      onAuthenticated?.();
+    } catch (error) {
+      setMessageType("error");
+      setMessage(authErrorMessage(error));
+    } finally {
+      setLoading(false);
     }
-
-    if (!data.session) {
-      Alert.alert("Check your email", "Supabase sent you a confirmation link.");
-      return;
-    }
-
-    Alert.alert("Success", "Your account was created.");
   }
 
   async function signIn() {
     if (!email.trim() || !password) {
-      Alert.alert("Missing information", "Enter an email and password.");
+      setMessageType("error");
+      setMessage("Enter an email and password.");
       return;
     }
 
+    setMessage("");
     setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      Alert.alert("Sign-in failed", error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw error;
+      setMessageType("success");
+      setMessage("You are signed in.");
+      onAuthenticated?.();
+    } catch (error) {
+      setMessageType("error");
+      setMessage(authErrorMessage(error));
+    } finally {
+      setLoading(false);
     }
-
-    Alert.alert("Success", "You are signed in.");
-    onAuthenticated?.();
   }
 
   return (
@@ -97,7 +103,17 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         style={styles.input}
       />
 
+      {message ? (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={messageType === "success" ? styles.successMessage : styles.errorMessage}
+        >
+          {message}
+        </Text>
+      ) : null}
+
       <Pressable
+        accessibilityRole="button"
         onPress={signIn}
         disabled={loading}
         style={styles.primaryButton}
@@ -108,6 +124,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
       </Pressable>
 
       <Pressable
+        accessibilityRole="button"
         onPress={signUp}
         disabled={loading}
         style={styles.secondaryButton}
@@ -116,6 +133,13 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
       </Pressable>
     </View>
   );
+}
+
+function authErrorMessage(error: unknown) {
+  if (error instanceof TypeError && error.message.toLowerCase().includes("fetch")) {
+    return "WaveLens could not reach Supabase. Check your connection and try again—the button will remain available.";
+  }
+  return error instanceof Error ? error.message : "Please try again.";
 }
 
 const styles = StyleSheet.create({
@@ -139,6 +163,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
+  },
+  errorMessage: {
+    color: "#b42318",
+    fontSize: 14,
+  },
+  successMessage: {
+    color: "#067647",
+    fontSize: 14,
   },
   primaryButton: {
     backgroundColor: "#111827",

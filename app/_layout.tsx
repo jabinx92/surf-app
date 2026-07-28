@@ -47,7 +47,16 @@ export default function RootLayout() {
         <Stack.Screen name="book" />
         <Stack.Screen name="requests" />
         <Stack.Screen name="become-a-creator" />
+        <Stack.Screen name="creator-application-status" />
         <Stack.Screen name="creator-requests" />
+        <Stack.Screen name="availability" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="admin" />
+        <Stack.Screen name="sign-in" />
+        <Stack.Screen name="messages/[bookingId]" />
+        <Stack.Screen name="gallery/[bookingId]" />
+        <Stack.Screen name="review/[bookingId]" />
+        <Stack.Screen name="report" />
         <Stack.Screen name="account" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="support" />

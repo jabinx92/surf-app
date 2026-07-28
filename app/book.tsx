@@ -22,7 +22,7 @@ export default function BookingScreen() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url")
+      .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url, is_verified")
       .eq("id", creatorId)
       .eq("is_listed", true)
       .maybeSingle();
