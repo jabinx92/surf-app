@@ -5,8 +5,10 @@
 - [ ] Join the Apple Developer Program and create an App Store Connect app record.
 - [ ] Choose a unique iOS bundle identifier (for example, a reverse-domain identifier you own). Add it under `expo.ios.bundleIdentifier` in `app.json`.
 - [ ] Log in to Expo with the account that should own WaveLens, then run `npx eas-cli@latest init`.
-- [ ] Run all seven SQL migrations in `supabase/migrations/` and test a signed-in booking request plus a creator application.
-- [ ] Deploy the `delete-account` Supabase Edge Function and verify in-app account deletion on a test account.
+- [x] Confirm all 13 SQL migrations in `supabase/migrations/` are represented in the live schema and pass the anonymous-access smoke checks.
+- [x] Test a signed-in booking request and creator application with separate disposable accounts.
+- [x] Deploy the `delete-account` Supabase Edge Function and verify anonymous calls are rejected.
+- [x] Verify account deletion with disposable signed-in customer and creator accounts, including booking/profile cleanup and rejected sign-in afterward.
 - [ ] Verify all creator records shown to customers are real people who consented to be listed.
 
 ## TestFlight acceptance checklist

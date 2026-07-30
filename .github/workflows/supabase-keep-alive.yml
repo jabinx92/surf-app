@@ -1,0 +1,31 @@
+name: Keep Supabase active
+
+on:
+  schedule:
+    # A few real database requests each day help prevent free projects from pausing.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Read one public row
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_PUBLISHABLE_KEY"
+
+          curl --fail --silent --show-error \
+            --get "$SUPABASE_URL/rest/v1/creator_profiles" \
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            --header "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY" \
+            --data-urlencode "select=id" \
+            --data-urlencode "limit=1" \
+            > /dev/null

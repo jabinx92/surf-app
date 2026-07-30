@@ -3,15 +3,8 @@
 WaveLens stores private customer booking requests and creator applications.
 
 1. Open the WaveLens Supabase project.
-2. In **SQL Editor**, run the migration files in this order:
-   - `supabase/migrations/202607160001_create_booking_requests.sql`
-   - `supabase/migrations/202607160002_create_creator_applications.sql`
-   - `supabase/migrations/202607160003_connect_creators_to_bookings.sql`
-   - `supabase/migrations/202607160004_secure_booking_contact.sql`
-   - `supabase/migrations/202607160005_add_creator_profile_details.sql`
-   - `supabase/migrations/202607170006_add_booking_session_hours.sql`
-   - `supabase/migrations/202607170007_add_booking_surf_spot.sql`
-3. Confirm the three tables appear in the Table Editor.
+2. In **SQL Editor**, run every `.sql` file in `supabase/migrations/` in filename order. There are currently 13 migrations, from `202607160001_create_booking_requests.sql` through `202607220013_external_delivery_links.sql`.
+3. Confirm the expected tables appear in the Table Editor, including `booking_requests`, `creator_applications`, `creator_profiles`, messaging, media-delivery, notification, review, report, and availability tables.
 4. Create a test customer account, submit a booking request, and verify a row is created with `status = pending`.
 5. Create a separate test creator account, submit an application, and verify a row is created with `status = pending`.
 
@@ -40,6 +33,16 @@ where id = 'REPLACE-WITH-APPLICATION-UUID';
 That person will immediately appear in WaveLens, can receive bookings, and can accept or decline them from **Creator dashboard**. Only list creators who consented to be displayed and who can reliably respond to customers.
 
 The public Expo environment variables must contain the project's **URL** and **anon/publishable key** only. Do not put a Supabase service-role key in the app.
+
+## Verify the backend
+
+Run the repeatable public-access and RLS smoke checks after migrations or policy changes:
+
+```powershell
+npm run verify:supabase
+```
+
+This confirms that the public creator directory is reachable, anonymous users cannot read private rows or create bookings, and account deletion requires a signed-in user. Signed-in customer-versus-creator isolation and successful account deletion still require two disposable test accounts.
 
 ## Deploy account deletion
 
