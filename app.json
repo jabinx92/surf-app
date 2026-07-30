@@ -10,6 +10,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.johnnywon.wavelens",
+      "buildNumber": "1",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
@@ -21,7 +23,11 @@
         "foregroundImage": "./assets/images/wavelens-icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -52,6 +58,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a1457ce5-680d-4586-b306-b4b23a3f780b"
+      }
+    },
+    "owner": "jabinx92"
   }
 }

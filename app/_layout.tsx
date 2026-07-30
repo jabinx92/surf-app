@@ -58,6 +58,7 @@ export default function RootLayout() {
         <Stack.Screen name="review/[bookingId]" />
         <Stack.Screen name="report" />
         <Stack.Screen name="account" />
+        <Stack.Screen name="profile-settings" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="support" />
 

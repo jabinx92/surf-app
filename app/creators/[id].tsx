@@ -15,7 +15,7 @@ export default function CreatorProfileScreen() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, city, services, portfolio_url, starting_rate, bio, travel_miles, avatar_url, is_verified")
+      .select("id, display_name, city, services, portfolio_url, portfolio_urls, starting_rate, bio, travel_miles, avatar_url, is_verified")
       .eq("id", id)
       .eq("is_listed", true)
       .maybeSingle();
@@ -27,13 +27,13 @@ export default function CreatorProfileScreen() {
 
   useFocusEffect(useCallback(() => { void loadCreator(); }, [loadCreator]));
 
-  async function openPortfolio() {
-    if (!creator || !/^https?:\/\//i.test(creator.portfolio_url)) {
+  async function openPortfolio(portfolioUrl: string) {
+    if (!/^https?:\/\//i.test(portfolioUrl)) {
       Alert.alert("Portfolio unavailable", "This creator has not supplied a valid portfolio link.");
       return;
     }
     try {
-      await Linking.openURL(creator.portfolio_url);
+      await Linking.openURL(portfolioUrl);
     } catch {
       Alert.alert("Could not open portfolio", "Please try again later.");
     }
@@ -46,6 +46,8 @@ export default function CreatorProfileScreen() {
     return <View style={styles.centered}><Text style={styles.title}>Creator not found</Text><Pressable accessibilityRole="button" onPress={() => router.back()}><Text style={styles.backButtonText}>Go back</Text></Pressable></View>;
   }
 
+  const portfolioLinks = creator.portfolio_urls?.length ? creator.portfolio_urls : [creator.portfolio_url];
+
   return (
     <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
       <StatusBar style="light" />
@@ -57,7 +59,7 @@ export default function CreatorProfileScreen() {
         <Text style={styles.meta}>{creator.city} - travels up to {creator.travel_miles} miles</Text>
         <Text style={styles.description}>{creator.bio || "Surf sessions captured with a local eye and a focus on the moments that matter."}</Text>
         <View style={styles.services}>{creator.services.map((service) => <View key={service} style={styles.serviceBadge}><Text style={styles.serviceText}>{service}</Text></View>)}</View>
-        <Pressable accessibilityRole="link" onPress={() => void openPortfolio()} style={styles.portfolioButton}><Text style={styles.portfolioText}>View portfolio</Text></Pressable>
+        <View style={styles.portfolioList}>{portfolioLinks.map((portfolioUrl, index) => <Pressable accessibilityRole="link" key={portfolioUrl} onPress={() => void openPortfolio(portfolioUrl)} style={styles.portfolioButton}><Text style={styles.portfolioText}>View portfolio {portfolioLinks.length > 1 ? index + 1 : ""}</Text></Pressable>)}</View>
         <View style={styles.reviewSection}><Text style={styles.reviewHeading}>REVIEWS {reviews.length ? `· ${(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)} ★` : ""}</Text>{reviews.length === 0 ? <Text style={styles.noReviews}>No reviews yet.</Text> : reviews.map(review => <View key={review.id} style={styles.review}><Text style={styles.reviewStars}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</Text>{review.comment ? <Text selectable style={styles.reviewComment}>{review.comment}</Text> : null}</View>)}</View>
         <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/report", params: { creatorId: creator.id } })} style={styles.reportButton}><Text style={styles.reportText}>Report this profile</Text></Pressable>
         <View style={styles.bookingRow}><View><Text style={styles.rateLabel}>STARTING HOURLY RATE</Text><Text style={styles.rate}>{hourlyRate(creator)}</Text></View><Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/book", params: { creatorId: creator.id, ...(spot ? { spot } : {}) } })} style={styles.bookButton}><Text style={styles.bookButtonText}>Request to book</Text></Pressable></View>
@@ -84,7 +86,8 @@ const styles = StyleSheet.create({
   services: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 22 },
   serviceBadge: { backgroundColor: "#1d4259", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   serviceText: { color: "#ffffff", fontSize: 13, fontWeight: "700" },
-  portfolioButton: { alignSelf: "flex-start", borderColor: "rgba(124,224,214,0.5)", borderRadius: 12, borderWidth: 1, marginTop: 22, minHeight: 46, justifyContent: "center", paddingHorizontal: 16 },
+  portfolioList: { alignItems: "flex-start", gap: 9, marginTop: 22 },
+  portfolioButton: { borderColor: "rgba(124,224,214,0.5)", borderRadius: 12, borderWidth: 1, minHeight: 46, justifyContent: "center", paddingHorizontal: 16 },
   portfolioText: { color: "#7ce0d6", fontSize: 14, fontWeight: "800" },
   reviewSection: { borderTopColor: "rgba(255,255,255,.12)", borderTopWidth: 1, gap: 10, marginTop: 28, paddingTop: 22 },
   reviewHeading: { color: "#91a8b8", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },

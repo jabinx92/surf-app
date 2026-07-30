@@ -1,9 +1,10 @@
 import { hourlyRate, serviceOptions, type Creator } from "@/data/creators";
 import { supabase } from "@/lib/supabase";
+import { SessionDatePicker } from "@/components/session-date-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 const sessionLengths = [1, 2, 3, 4] as const;
 
@@ -17,6 +18,8 @@ export default function BookingScreen() {
   const [notes, setNotes] = useState("");
   const [contactDetails, setContactDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formMessage, setFormMessage] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const loadCreator = useCallback(async () => {
     setIsLoading(true);
@@ -36,23 +39,24 @@ export default function BookingScreen() {
 
   async function submitRequest() {
     if (!creator) return;
+    setFormMessage("");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
-      Alert.alert("Choose a date", "Use the format YYYY-MM-DD.");
+      setFormMessage("Choose your session date from the calendar.");
       return;
     }
     if (!spot?.trim()) {
-      Alert.alert("Choose a surf spot", "Go back and select the break where you want to be filmed.");
+      setFormMessage("Go back and select the surf spot where you want to be filmed.");
       return;
     }
     if (contactDetails.trim().length < 2) {
-      Alert.alert("Add contact details", "Share an email address, phone number, or Instagram handle so the creator can reply.");
+      setFormMessage("Add an email address, phone number, or Instagram handle so the creator can reply.");
       return;
     }
     setIsSubmitting(true);
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
-        Alert.alert("Sign in required", "Sign in or create an account before sending a booking request.");
+        setFormMessage("Sign in or create an account before sending a booking request.");
         return;
       }
       const { error } = await supabase.from("booking_requests").insert({
@@ -66,9 +70,9 @@ export default function BookingScreen() {
         contact_details: contactDetails.trim(),
       });
       if (error) throw error;
-      Alert.alert("Request sent", `${creator.display_name} can now review your ${sessionHours}-hour ${serviceType.toLowerCase()} request for ${sessionDate}.`, [{ text: "View requests", onPress: () => router.replace("/requests") }]);
+      setIsSubmitted(true);
     } catch (error) {
-      Alert.alert("Could not send your request", error instanceof Error ? error.message : "Please try again.");
+      setFormMessage(error instanceof Error ? error.message : "We could not send your request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -76,6 +80,26 @@ export default function BookingScreen() {
 
   if (isLoading) return <View style={styles.centered}><ActivityIndicator color="#56d6c9" /></View>;
   if (!creator) return <View style={styles.centered}><Text selectable style={styles.title}>Creator not found</Text><Pressable accessibilityRole="button" onPress={() => router.back()}><Text style={styles.link}>Go back</Text></Pressable></View>;
+
+  if (isSubmitted) {
+    return (
+      <ScrollView contentContainerStyle={[styles.screen, styles.confirmationScreen]} contentInsetAdjustmentBehavior="automatic">
+        <StatusBar style="light" />
+        <View style={styles.successIcon}><Text style={styles.successIconText}>✓</Text></View>
+        <Text style={styles.eyebrow}>REQUEST SENT</Text>
+        <Text selectable style={styles.confirmationTitle}>Your session request is on its way.</Text>
+        <Text selectable style={styles.confirmationBody}>{creator.display_name} can now review your request and reply through WaveLens.</Text>
+        <View style={styles.confirmationCard}>
+          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>CREATOR</Text><Text selectable style={styles.confirmationValue}>{creator.display_name}</Text></View>
+          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>DATE</Text><Text selectable style={styles.confirmationValue}>{sessionDate}</Text></View>
+          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SURF SPOT</Text><Text selectable style={styles.confirmationValue}>{spot}</Text></View>
+          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SESSION</Text><Text selectable style={styles.confirmationValue}>{sessionHours} {sessionHours === 1 ? "hour" : "hours"} · {serviceType}</Text></View>
+        </View>
+        <Pressable accessibilityRole="button" onPress={() => router.replace("/requests")} style={styles.submitButton}><Text style={styles.submitText}>View my requests</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.replace("/creators")} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Browse more creators</Text></Pressable>
+      </ScrollView>
+    );
+  }
 
   const estimatedTotal = creator.starting_rate * sessionHours;
 
@@ -96,9 +120,10 @@ export default function BookingScreen() {
 
       <View style={styles.section}><Text style={styles.label}>WHAT DO YOU NEED?</Text><View style={styles.options}>{serviceOptions.filter((option) => creator.services.includes(option)).map((option) => <Pressable accessibilityRole="button" key={option} onPress={() => setServiceType(option)} style={[styles.option, serviceType === option && styles.optionSelected]}><Text style={[styles.optionText, serviceType === option && styles.optionTextSelected]}>{option}</Text></Pressable>)}</View></View>
       <View style={styles.section}><Text style={styles.label}>SESSION LENGTH</Text><View style={styles.options}>{sessionLengths.map((hours) => <Pressable accessibilityLabel={`${hours} ${hours === 1 ? "hour" : "hours"}`} accessibilityRole="button" key={hours} onPress={() => setSessionHours(hours)} style={[styles.option, sessionHours === hours && styles.optionSelected]}><Text style={[styles.optionText, sessionHours === hours && styles.optionTextSelected]}>{hours} {hours === 1 ? "hour" : "hours"}</Text></Pressable>)}</View></View>
-      <View style={styles.section}><Text style={styles.label}>SESSION DATE</Text><TextInput accessibilityLabel="Session date" autoCapitalize="none" keyboardType="numbers-and-punctuation" onChangeText={setSessionDate} placeholder="YYYY-MM-DD" placeholderTextColor="#698596" value={sessionDate} style={styles.input} /></View>
+      <View style={styles.section}><Text style={styles.label}>SESSION DATE</Text><SessionDatePicker onChange={setSessionDate} value={sessionDate} /></View>
       <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Surf spot, preferred time, and anything they should know." placeholderTextColor="#698596" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
       <View style={styles.section}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" value={contactDetails} style={styles.input} /></View>
+      {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text></View> : null}
       <Pressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} onPress={() => void submitRequest()} style={({ pressed }) => [styles.submitButton, (pressed || isSubmitting) && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></Pressable>
       <Text selectable style={styles.footnote}>WaveLens does not process payments. Confirm final scope and payment directly with the creator.</Text>
     </ScrollView>
@@ -129,9 +154,22 @@ const styles = StyleSheet.create({
   optionTextSelected: { color: "#061827" },
   input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.14)", borderRadius: 16, borderWidth: 1, color: "#ffffff", fontSize: 16, paddingHorizontal: 16, paddingVertical: 15 },
   notesInput: { minHeight: 130 },
+  formMessage: { backgroundColor: "rgba(255,177,92,0.1)", borderColor: "rgba(255,177,92,0.32)", borderCurve: "continuous", borderRadius: 14, borderWidth: 1, marginTop: 22, padding: 14 },
+  formMessageText: { color: "#ffd4a3", fontSize: 14, lineHeight: 20 },
   submitButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 18, justifyContent: "center", marginTop: 36, minHeight: 58 },
   submitText: { color: "#061827", fontSize: 16, fontWeight: "800" },
   footnote: { color: "#698596", fontSize: 12, lineHeight: 18, marginTop: 14, textAlign: "center" },
   buttonPressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
   link: { color: "#56d6c9", fontSize: 16, fontWeight: "700" },
+  confirmationScreen: { justifyContent: "center" },
+  successIcon: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 30, height: 60, justifyContent: "center", marginBottom: 18, width: 60 },
+  successIconText: { color: "#061827", fontSize: 30, fontWeight: "900" },
+  confirmationTitle: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, lineHeight: 43, marginTop: 10 },
+  confirmationBody: { color: "#b9c9d6", fontSize: 16, lineHeight: 24, marginTop: 12 },
+  confirmationCard: { backgroundColor: "rgba(255,255,255,0.055)", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 20, borderWidth: 1, gap: 16, marginTop: 26, padding: 18 },
+  confirmationRow: { gap: 4 },
+  confirmationLabel: { color: "#698596", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
+  confirmationValue: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
+  secondaryButton: { alignItems: "center", borderColor: "rgba(255,255,255,0.18)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, justifyContent: "center", marginTop: 12, minHeight: 54 },
+  secondaryButtonText: { color: "#ffffff", fontSize: 15, fontWeight: "800" },
 });

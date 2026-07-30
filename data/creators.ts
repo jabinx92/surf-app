@@ -8,6 +8,7 @@ export type Creator = {
   city: string;
   services: CreatorService[];
   portfolio_url: string;
+  portfolio_urls?: string[];
   starting_rate: number;
   bio: string;
   travel_miles: number;

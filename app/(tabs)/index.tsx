@@ -72,7 +72,7 @@ export default function HomeScreen() {
             <View style={[styles.heroCopy, isWide && styles.heroCopyWide]}>
               <View style={styles.eyebrow}><View style={styles.liveDot} /><Text style={styles.eyebrowText}>SURF MEDIA, MADE SIMPLE</Text></View>
               <Text style={[styles.headline, isWide && styles.headlineWide]}>The better way to remember your best sessions.</Text>
-              <Text style={styles.description}>Book a photographer or videographer who knows the coastline, the lineup, and the moment worth keeping.</Text>
+              <Text style={styles.description}>Book a photographer or videographer to capture your next surf session.</Text>
               <View style={styles.heroActions}>
                 <Pressable accessibilityRole="button" onPress={() => router.push("/location")} style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}>
                   <Text style={styles.primaryButtonText}>Find a creator</Text>

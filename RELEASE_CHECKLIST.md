@@ -3,8 +3,9 @@
 ## Before the first cloud build
 
 - [ ] Join the Apple Developer Program and create an App Store Connect app record.
-- [ ] Choose a unique iOS bundle identifier (for example, a reverse-domain identifier you own). Add it under `expo.ios.bundleIdentifier` in `app.json`.
-- [ ] Log in to Expo with the account that should own WaveLens, then run `npx eas-cli@latest init`.
+- [x] Set the permanent iOS bundle identifier to `com.johnnywon.wavelens` and initial build number to `1` in `app.json`.
+- [x] Link WaveLens to the `jabinx92` Expo account and EAS project (`a1457ce5-680d-4586-b306-b4b23a3f780b`).
+- [x] Configure the Supabase URL and publishable key in the EAS development, preview, and production environments.
 - [x] Confirm all 13 SQL migrations in `supabase/migrations/` are represented in the live schema and pass the anonymous-access smoke checks.
 - [x] Test a signed-in booking request and creator application with separate disposable accounts.
 - [x] Deploy the `delete-account` Supabase Edge Function and verify anonymous calls are rejected.

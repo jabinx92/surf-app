@@ -32,7 +32,8 @@ export default function LocationScreen() {
       const { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
 
       if (permissionStatus !== "granted") {
-        setStatus("Location permission denied");
+        setStatus("Location is unavailable in this browser. Choose a surf spot instead.");
+        setIsChoosingSpot(true);
         return;
       }
 
@@ -51,7 +52,8 @@ export default function LocationScreen() {
       setStatus("Nearby surf spots found");
     } catch (error) {
       console.error(error);
-      setStatus("Unable to get your location. Please try again.");
+      setStatus("We could not get your location. Choose a surf spot instead.");
+      setIsChoosingSpot(true);
     }
   }
 
@@ -93,6 +95,7 @@ export default function LocationScreen() {
               <Text style={styles.eyebrow}>CHOOSE A BREAK</Text>
               <Text style={[styles.resultsPageTitle, isWide && styles.resultsPageTitleWide]}>Where are you surfing?</Text>
               <Text style={styles.resultsSubtitle}>Pick a surf spot to see photographers and videographers nearby.</Text>
+              {status !== "Ready" ? <Text selectable style={styles.locationNotice}>{status}</Text> : null}
             </View>
             <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.results} contentContainerStyle={[styles.resultsContent, isWide && styles.resultsContentWide]} showsVerticalScrollIndicator={false}>
               {surfSpots.map(renderSpotCard)}
@@ -187,6 +190,7 @@ const styles = StyleSheet.create({
   resultsPageTitle: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, lineHeight: 43 },
   resultsPageTitleWide: { fontSize: 50, letterSpacing: -2.1, lineHeight: 55 },
   resultsSubtitle: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 10 },
+  locationNotice: { backgroundColor: "rgba(86,214,201,0.1)", borderColor: "rgba(86,214,201,0.24)", borderRadius: 12, borderWidth: 1, color: "#d9e5ec", fontSize: 13, lineHeight: 19, marginTop: 16, paddingHorizontal: 14, paddingVertical: 11 },
   results: { flex: 1 },
   resultsContent: { gap: 12, paddingBottom: 20 },
   resultsContentWide: { flexDirection: "row", flexWrap: "wrap" },
