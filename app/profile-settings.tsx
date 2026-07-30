@@ -175,8 +175,7 @@ export default function ProfileSettingsScreen() {
       setDisplayName(nextName);
       setBio(nextBio);
       setPortfolioLinks(nextPortfolioLinks.length ? nextPortfolioLinks : [""]);
-      setMessage(creatorProfile ? "Your public creator profile is updated." : "Your account profile is updated.");
-      setIsSuccess(true);
+      router.replace("/account?notice=profile-saved");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not save your profile.");
     } finally {
