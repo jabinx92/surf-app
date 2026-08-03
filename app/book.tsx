@@ -5,6 +5,9 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Animated, { FadeInUp, ReduceMotion } from "react-native-reanimated";
+import FeedbackPressable from "@/components/feedback-pressable";
+import * as Haptics from "expo-haptics";
 
 const sessionLengths = [1, 2, 3, 4] as const;
 
@@ -70,6 +73,9 @@ export default function BookingScreen() {
         contact_details: contactDetails.trim(),
       });
       if (error) throw error;
+      if (process.env.EXPO_OS === "ios") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       setIsSubmitted(true);
     } catch (error) {
       setFormMessage(error instanceof Error ? error.message : "We could not send your request. Please try again.");
@@ -85,18 +91,20 @@ export default function BookingScreen() {
     return (
       <ScrollView contentContainerStyle={[styles.screen, styles.confirmationScreen]} contentInsetAdjustmentBehavior="automatic">
         <StatusBar style="light" />
-        <View style={styles.successIcon}><Text style={styles.successIconText}>✓</Text></View>
-        <Text style={styles.eyebrow}>REQUEST SENT</Text>
-        <Text selectable style={styles.confirmationTitle}>Your session request is on its way.</Text>
-        <Text selectable style={styles.confirmationBody}>{creator.display_name} can now review your request and reply through WaveLens.</Text>
-        <View style={styles.confirmationCard}>
-          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>CREATOR</Text><Text selectable style={styles.confirmationValue}>{creator.display_name}</Text></View>
-          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>DATE</Text><Text selectable style={styles.confirmationValue}>{sessionDate}</Text></View>
-          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SURF SPOT</Text><Text selectable style={styles.confirmationValue}>{spot}</Text></View>
-          <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SESSION</Text><Text selectable style={styles.confirmationValue}>{sessionHours} {sessionHours === 1 ? "hour" : "hours"} · {serviceType}</Text></View>
-        </View>
-        <Pressable accessibilityRole="button" onPress={() => router.replace("/requests")} style={styles.submitButton}><Text style={styles.submitText}>View my requests</Text></Pressable>
-        <Pressable accessibilityRole="button" onPress={() => router.replace("/creators")} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Browse more creators</Text></Pressable>
+        <Animated.View entering={FadeInUp.duration(240).reduceMotion(ReduceMotion.System)}>
+          <View style={styles.successIcon}><Text style={styles.successIconText}>✓</Text></View>
+          <Text style={styles.eyebrow}>REQUEST SENT</Text>
+          <Text selectable style={styles.confirmationTitle}>Your session request is on its way.</Text>
+          <Text selectable style={styles.confirmationBody}>{creator.display_name} can now review your request and reply through WaveLens.</Text>
+          <View style={styles.confirmationCard}>
+            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>CREATOR</Text><Text selectable style={styles.confirmationValue}>{creator.display_name}</Text></View>
+            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>DATE</Text><Text selectable style={styles.confirmationValue}>{sessionDate}</Text></View>
+            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SURF SPOT</Text><Text selectable style={styles.confirmationValue}>{spot}</Text></View>
+            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SESSION</Text><Text selectable style={styles.confirmationValue}>{sessionHours} {sessionHours === 1 ? "hour" : "hours"} · {serviceType}</Text></View>
+          </View>
+          <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.replace("/requests")} style={styles.submitButton}><Text style={styles.submitText}>View my requests</Text></FeedbackPressable>
+          <Pressable accessibilityRole="button" onPress={() => router.replace("/creators")} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Browse more creators</Text></Pressable>
+        </Animated.View>
       </ScrollView>
     );
   }
@@ -124,7 +132,7 @@ export default function BookingScreen() {
       <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Surf spot, preferred time, and anything they should know." placeholderTextColor="#698596" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
       <View style={styles.section}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" value={contactDetails} style={styles.input} /></View>
       {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text></View> : null}
-      <Pressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} onPress={() => void submitRequest()} style={({ pressed }) => [styles.submitButton, (pressed || isSubmitting) && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></Pressable>
+      <FeedbackPressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} haptic="light" onPress={() => void submitRequest()} style={[styles.submitButton, isSubmitting && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></FeedbackPressable>
       <Text selectable style={styles.footnote}>WaveLens does not process payments. Confirm final scope and payment directly with the creator.</Text>
     </ScrollView>
   );

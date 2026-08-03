@@ -6,13 +6,13 @@ Use this as the starting point in App Store Connect after the real support email
 
 | Field | Draft |
 | --- | --- |
-| Name | WaveLens |
+| Name | WaveLens Surf |
 | Subtitle | Book surf photo and video |
 | Category | Sports |
 | Secondary category | Photo & Video |
 | Keywords | surf photography, surf video, surf photographer, videographer, surf session, wave, drone video, surf media |
-| Privacy Policy URL | `https://YOUR-PUBLIC-DOMAIN/privacy` |
-| Support URL | A public support page or mailto-enabled page owned by WaveLens |
+| Privacy Policy URL | `https://wavelens.expo.app/privacy` |
+| Support URL | `https://wavelens.expo.app/support` |
 
 ## Promotional text
 
@@ -62,6 +62,4 @@ Include the test-account credentials, a short explanation of the customer-to-cre
 
 ## Final items to replace
 
-- `YOUR-PUBLIC-DOMAIN` with the deployed privacy-policy host
-- support URL with a real, monitored WaveLens support destination
 - test credentials with accounts that work in the submitted build

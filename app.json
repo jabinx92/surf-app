@@ -42,6 +42,14 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "WaveLens uses the photo you choose as your profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/wavelens-icon.png",

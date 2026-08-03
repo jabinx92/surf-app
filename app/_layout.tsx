@@ -53,6 +53,8 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="admin" />
         <Stack.Screen name="sign-in" />
+        <Stack.Screen name="forgot-password" />
+        <Stack.Screen name="reset-password" />
         <Stack.Screen name="messages/[bookingId]" />
         <Stack.Screen name="gallery/[bookingId]" />
         <Stack.Screen name="review/[bookingId]" />

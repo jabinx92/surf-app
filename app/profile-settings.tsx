@@ -1,12 +1,14 @@
 import { supabase } from "@/lib/supabase";
-import { Image } from "expo-image";
+import ProfileAvatar, { avatarColors, defaultAvatarColor } from "@/components/profile-avatar";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import FeedbackPressable from "@/components/feedback-pressable";
 
 type CreatorProfile = {
+  avatar_color: string;
   avatar_url: string | null;
   bio: string;
   display_name: string;
@@ -21,13 +23,47 @@ const avatarExtensions: Record<string, string> = {
   "image/webp": "webp",
 };
 
+const hasNativePhotoEditor = process.env.EXPO_OS === "ios" || process.env.EXPO_OS === "android";
+
+function normalizePortfolioUrl(value: string) {
+  const trimmedValue = value.trim();
+  return trimmedValue && !/^https?:\/\//i.test(trimmedValue) ? `https://${trimmedValue}` : trimmedValue;
+}
+
+function getPortfolioUrlError(value: string) {
+  const normalizedUrl = normalizePortfolioUrl(value);
+  if (!normalizedUrl) return "Enter a portfolio URL or remove this row.";
+  if (normalizedUrl.length > 500) return "URL must be 500 characters or fewer.";
+
+  try {
+    const parsedUrl = new URL(normalizedUrl);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const isPrivateAddress =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("192.168.") ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(hostname);
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol) || !hostname.includes(".") || isPrivateAddress) {
+      return "Must be a valid public website URL.";
+    }
+  } catch {
+    return "Must be a valid URL, such as instagram.com/yourname.";
+  }
+
+  return "";
+}
+
 export default function ProfileSettingsScreen() {
   const [userId, setUserId] = useState("");
   const [creatorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState<string[]>([""]);
+  const [portfolioErrors, setPortfolioErrors] = useState<string[]>([""]);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarColor, setAvatarColor] = useState<string>(defaultAvatarColor);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -47,7 +83,7 @@ export default function ProfileSettingsScreen() {
     const metadata = data.user.user_metadata ?? {};
     const { data: creator, error: creatorError } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, bio, portfolio_url, portfolio_urls, avatar_url")
+      .select("id, display_name, bio, portfolio_url, portfolio_urls, avatar_url, avatar_color")
       .eq("owner_id", data.user.id)
       .maybeSingle();
 
@@ -62,7 +98,9 @@ export default function ProfileSettingsScreen() {
         ? metadata.portfolio_urls
         : [nextCreator?.portfolio_url ?? metadata.portfolio_url ?? ""];
     setPortfolioLinks(savedLinks.slice(0, 5));
+    setPortfolioErrors(savedLinks.slice(0, 5).map(() => ""));
     setAvatarUrl(nextCreator?.avatar_url ?? metadata.avatar_url ?? "");
+    setAvatarColor(nextCreator?.avatar_color ?? metadata.avatar_color ?? defaultAvatarColor);
     setIsLoading(false);
   }, []);
 
@@ -70,11 +108,17 @@ export default function ProfileSettingsScreen() {
 
   function updatePortfolioLink(index: number, value: string) {
     setPortfolioLinks((current) => current.map((link, linkIndex) => linkIndex === index ? value : link));
+    setPortfolioErrors((current) => current.map((error, errorIndex) => errorIndex === index ? "" : error));
+  }
+
+  function validatePortfolioLink(index: number) {
+    setPortfolioErrors((current) => current.map((error, errorIndex) => errorIndex === index ? getPortfolioUrlError(portfolioLinks[index] ?? "") : error));
   }
 
   function addPortfolioLink() {
     if (portfolioLinks.length >= 5) return;
     setPortfolioLinks((current) => [...current, ""]);
+    setPortfolioErrors((current) => [...current, ""]);
   }
 
   function removePortfolioLink(index: number) {
@@ -84,6 +128,7 @@ export default function ProfileSettingsScreen() {
       return;
     }
     setPortfolioLinks((current) => current.filter((_, linkIndex) => linkIndex !== index));
+    setPortfolioErrors((current) => current.filter((_, errorIndex) => errorIndex !== index));
   }
 
   async function choosePhoto() {
@@ -127,13 +172,31 @@ export default function ProfileSettingsScreen() {
     }
   }
 
+  async function removePhoto() {
+    setMessage("");
+    setIsSuccess(false);
+    setIsUploading(true);
+    try {
+      const { data: files, error: listError } = await supabase.storage.from("profile-avatars").list(userId);
+      if (listError) throw listError;
+      const paths = (files ?? []).map((file) => `${userId}/${file.name}`);
+      if (paths.length) {
+        const { error: removeError } = await supabase.storage.from("profile-avatars").remove(paths);
+        if (removeError) throw removeError;
+      }
+      setAvatarUrl("");
+      setMessage("Photo removed. Choose a color, then save your profile.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "We could not remove that photo.");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   async function saveProfile() {
     const nextName = displayName.trim();
     const nextBio = bio.trim();
-    const nextPortfolioLinks = portfolioLinks.map((link) => {
-      const trimmedLink = link.trim();
-      return trimmedLink && !/^https?:\/\//i.test(trimmedLink) ? `https://${trimmedLink}` : trimmedLink;
-    });
+    const nextPortfolioLinks = portfolioLinks.map(normalizePortfolioUrl);
     setMessage("");
     setIsSuccess(false);
 
@@ -145,29 +208,27 @@ export default function ProfileSettingsScreen() {
       setMessage("Description must be 500 characters or fewer.");
       return;
     }
-    if (nextPortfolioLinks.some((link) => !link)) {
-      setMessage("Fill in each portfolio link or remove the empty row.");
+    const nextPortfolioErrors = portfolioLinks.map(getPortfolioUrlError);
+    setPortfolioErrors(nextPortfolioErrors);
+    if (nextPortfolioErrors.some(Boolean)) {
+      setMessage("Fix the highlighted portfolio link before saving.");
       return;
     }
     if (creatorProfile && nextPortfolioLinks.length === 0) {
       setMessage("Creators must keep at least one portfolio link.");
       return;
     }
-    if (nextPortfolioLinks.some((link) => !/^https?:\/\//i.test(link) || link.length > 500)) {
-      setMessage("Each portfolio link must be a valid web address under 500 characters.");
-      return;
-    }
     setIsSaving(true);
     try {
       const { error: authError } = await supabase.auth.updateUser({
-        data: { avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, portfolio_url: nextPortfolioLinks[0] ?? "", portfolio_urls: nextPortfolioLinks },
+        data: { avatar_color: avatarColor, avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, portfolio_url: nextPortfolioLinks[0] ?? "", portfolio_urls: nextPortfolioLinks },
       });
       if (authError) throw authError;
 
       if (creatorProfile) {
         const { error: creatorError } = await supabase
           .from("creator_profiles")
-          .update({ avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, portfolio_url: nextPortfolioLinks[0], portfolio_urls: nextPortfolioLinks })
+          .update({ avatar_color: avatarColor, avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, portfolio_url: nextPortfolioLinks[0], portfolio_urls: nextPortfolioLinks })
           .eq("id", creatorProfile.id);
         if (creatorError) throw creatorError;
       }
@@ -194,9 +255,31 @@ export default function ProfileSettingsScreen() {
       {isLoading ? <View style={styles.loading}><ActivityIndicator color="#56d6c9" /></View> : (
         <View style={styles.form}>
           <View style={styles.avatarSection}>
-            {avatarUrl ? <Image accessibilityLabel="Profile picture preview" contentFit="cover" source={avatarUrl} style={styles.avatar} transition={180} /> : <View style={styles.avatarFallback}><Text style={styles.avatarInitial}>{displayName.charAt(0).toUpperCase() || "W"}</Text></View>}
-            <Pressable accessibilityRole="button" disabled={isUploading} onPress={() => void choosePhoto()} style={styles.photoButton}><Text style={styles.photoButtonText}>{isUploading ? "Uploading..." : avatarUrl ? "Change photo" : "Add photo"}</Text></Pressable>
-            <Text selectable style={styles.photoHelp}>JPG, PNG, or WebP · maximum 5 MB</Text>
+            <ProfileAvatar color={avatarColor} imageUrl={avatarUrl} name={displayName} size={108} />
+            <View style={styles.photoActions}>
+              <Pressable accessibilityRole="button" disabled={isUploading} onPress={() => void choosePhoto()} style={styles.photoButton}><Text style={styles.photoButtonText}>{isUploading ? "Working..." : hasNativePhotoEditor ? avatarUrl ? "Change & crop photo" : "Choose & crop photo" : avatarUrl ? "Change photo" : "Add photo"}</Text></Pressable>
+              {avatarUrl ? <Pressable accessibilityRole="button" disabled={isUploading} onPress={() => void removePhoto()} style={styles.removePhotoButton}><Text style={styles.removePhotoText}>Remove photo</Text></Pressable> : null}
+            </View>
+            <Text selectable style={styles.photoHelp}>{hasNativePhotoEditor ? "After choosing, pinch to zoom and position your photo." : "JPG, PNG, or WebP · maximum 5 MB"}</Text>
+            <Text style={styles.colorLabel}>{avatarUrl ? "Fallback color" : "Avatar color"}</Text>
+            <View accessibilityRole="radiogroup" style={styles.colorGrid}>
+              {avatarColors.map((option) => {
+                const selected = avatarColor === option.value;
+                return (
+                  <Pressable
+                    accessibilityLabel={`${option.label} avatar color`}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    key={option.value}
+                    onPress={() => setAvatarColor(option.value)}
+                    style={[styles.colorOption, { backgroundColor: option.value }, selected && styles.colorOptionSelected]}
+                  >
+                    {selected ? <Text style={styles.colorCheck}>✓</Text> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+            {avatarUrl ? <Text selectable style={styles.colorHelp}>This color appears if your photo is removed or unavailable.</Text> : null}
           </View>
 
           <Text style={styles.label}>Display name</Text>
@@ -212,16 +295,19 @@ export default function ProfileSettingsScreen() {
           </View>
           <View style={styles.portfolioList}>
             {portfolioLinks.map((link, index) => (
-              <View key={`portfolio-${index}`} style={styles.portfolioRow}>
-                <TextInput accessibilityLabel={`Portfolio link ${index + 1}`} autoCapitalize="none" autoCorrect={false} keyboardType="url" onChangeText={(value) => updatePortfolioLink(index, value)} placeholder="instagram.com/yourname" placeholderTextColor="#718997" style={[styles.input, styles.portfolioInput]} value={link} />
-                <Pressable accessibilityLabel={`Remove portfolio link ${index + 1}`} accessibilityRole="button" onPress={() => removePortfolioLink(index)} style={styles.removeLinkButton}><Text style={styles.removeLinkText}>−</Text></Pressable>
+              <View key={`portfolio-${index}`} style={styles.portfolioField}>
+                <View style={styles.portfolioRow}>
+                  <TextInput accessibilityHint={portfolioErrors[index] || undefined} accessibilityLabel={`Portfolio link ${index + 1}`} autoCapitalize="none" autoCorrect={false} keyboardType="url" onBlur={() => validatePortfolioLink(index)} onChangeText={(value) => updatePortfolioLink(index, value)} placeholder="instagram.com/yourname" placeholderTextColor="#718997" style={[styles.input, styles.portfolioInput, portfolioErrors[index] && styles.inputError]} value={link} />
+                  <Pressable accessibilityLabel={`Remove portfolio link ${index + 1}`} accessibilityRole="button" onPress={() => removePortfolioLink(index)} style={styles.removeLinkButton}><Text style={styles.removeLinkText}>−</Text></Pressable>
+                </View>
+                {portfolioErrors[index] ? <Text accessibilityLiveRegion="polite" style={styles.fieldError}>{portfolioErrors[index]}</Text> : null}
               </View>
             ))}
           </View>
           <Pressable accessibilityRole="button" disabled={portfolioLinks.length >= 5} onPress={addPortfolioLink} style={[styles.addLinkButton, portfolioLinks.length >= 5 && styles.disabled]}><Text style={styles.addLinkText}>+ Add portfolio link</Text></Pressable>
 
           {message ? <View accessibilityRole={isSuccess ? undefined : "alert"} style={[styles.message, isSuccess && styles.successMessage]}><Text selectable style={[styles.messageText, isSuccess && styles.successMessageText]}>{message}</Text></View> : null}
-          <Pressable accessibilityRole="button" disabled={isSaving || isUploading} onPress={() => void saveProfile()} style={[styles.saveButton, (isSaving || isUploading) && styles.disabled]}><Text style={styles.saveButtonText}>{isSaving ? "Saving..." : "Save profile"}</Text></Pressable>
+          <FeedbackPressable accessibilityRole="button" disabled={isSaving || isUploading} haptic="light" onPress={() => void saveProfile()} style={[styles.saveButton, (isSaving || isUploading) && styles.disabled]}><Text style={styles.saveButtonText}>{isSaving ? "Saving..." : "Save profile"}</Text></FeedbackPressable>
         </View>
       )}
     </ScrollView>
@@ -238,12 +324,18 @@ const styles = StyleSheet.create({
   loading: { alignItems: "center", paddingTop: 80 },
   form: { marginTop: 28 },
   avatarSection: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 22, borderWidth: 1, padding: 22 },
-  avatar: { borderRadius: 54, height: 108, width: 108 },
-  avatarFallback: { alignItems: "center", backgroundColor: "rgba(86,214,201,0.16)", borderColor: "rgba(86,214,201,0.32)", borderRadius: 54, borderWidth: 1, height: 108, justifyContent: "center", width: 108 },
-  avatarInitial: { color: "#56d6c9", fontSize: 42, fontWeight: "900" },
-  photoButton: { alignItems: "center", borderColor: "rgba(255,255,255,0.2)", borderRadius: 14, borderWidth: 1, justifyContent: "center", marginTop: 16, minHeight: 44, paddingHorizontal: 18 },
+  photoActions: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 16 },
+  photoButton: { alignItems: "center", borderColor: "rgba(255,255,255,0.2)", borderRadius: 14, borderWidth: 1, justifyContent: "center", minHeight: 44, paddingHorizontal: 18 },
+  removePhotoButton: { alignItems: "center", borderColor: "rgba(245,163,163,0.35)", borderRadius: 14, borderWidth: 1, justifyContent: "center", minHeight: 44, paddingHorizontal: 18 },
+  removePhotoText: { color: "#f5a3a3", fontSize: 14, fontWeight: "800" },
   photoButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "800" },
   photoHelp: { color: "#698596", fontSize: 12, marginTop: 9 },
+  colorLabel: { color: "#e8f2f5", fontSize: 13, fontWeight: "800", marginTop: 22 },
+  colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 12, maxWidth: 330 },
+  colorOption: { alignItems: "center", borderColor: "transparent", borderRadius: 23, borderWidth: 3, height: 46, justifyContent: "center", width: 46 },
+  colorOptionSelected: { borderColor: "#ffffff" },
+  colorCheck: { color: "#ffffff", fontSize: 20, fontWeight: "900" },
+  colorHelp: { color: "#698596", fontSize: 12, marginTop: 10, textAlign: "center" },
   label: { color: "#e8f2f5", fontSize: 14, fontWeight: "700", marginBottom: 9, marginTop: 20 },
   input: { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.15)", borderCurve: "continuous", borderRadius: 14, borderWidth: 1, color: "#ffffff", fontSize: 16, minHeight: 54, paddingHorizontal: 15 },
   bioInput: { minHeight: 120, paddingTop: 14 },
@@ -251,8 +343,11 @@ const styles = StyleSheet.create({
   portfolioHeader: { alignItems: "flex-end", flexDirection: "row", justifyContent: "space-between" },
   linkLimit: { color: "#698596", fontSize: 12, marginBottom: 9 },
   portfolioList: { gap: 10 },
+  portfolioField: { gap: 6 },
   portfolioRow: { alignItems: "center", flexDirection: "row", gap: 9 },
   portfolioInput: { flex: 1 },
+  inputError: { borderColor: "#f97066" },
+  fieldError: { color: "#fda29b", fontSize: 13, lineHeight: 18, paddingLeft: 4 },
   removeLinkButton: { alignItems: "center", borderColor: "rgba(245,163,163,0.35)", borderRadius: 14, borderWidth: 1, height: 48, justifyContent: "center", width: 48 },
   removeLinkText: { color: "#f5a3a3", fontSize: 24, fontWeight: "700" },
   addLinkButton: { alignItems: "center", borderColor: "rgba(86,214,201,0.3)", borderRadius: 14, borderWidth: 1, justifyContent: "center", marginTop: 10, minHeight: 46 },

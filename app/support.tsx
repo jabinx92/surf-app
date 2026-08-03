@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function SupportScreen() {
   return (
@@ -14,7 +14,12 @@ export default function SupportScreen() {
       <SupportItem title="Payments">WaveLens does not process payments in this release. Agree on final coverage, delivery, and payment directly with the creator.</SupportItem>
       <SupportItem title="Creator profiles">Only creators approved by WaveLens appear in the public directory. Review a creator&apos;s portfolio, services, travel range, and starting hourly rate before requesting a session.</SupportItem>
       <SupportItem title="Privacy and account deletion">You can permanently delete your account and associated booking data from Account. Read the full privacy policy in the Account screen.</SupportItem>
-      <View style={styles.note}><Text selectable style={styles.noteText}>For launch support, use the contact address listed on the App Store listing. Replace that listing with a real, monitored WaveLens support address before submitting the app.</Text></View>
+      <View style={styles.note}>
+        <Text selectable style={styles.noteText}>Need more help? Email the WaveLens support team.</Text>
+        <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("mailto:jabinx92@gmail.com")}>
+          <Text selectable style={styles.email}>jabinx92@gmail.com</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -35,4 +40,5 @@ const styles = StyleSheet.create({
   body: { color: "#c6d6de", fontSize: 16, lineHeight: 24 },
   note: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, marginTop: 28, padding: 16 },
   noteText: { color: "#91a8b8", fontSize: 13, lineHeight: 19 },
+  email: { color: "#7ce0d6", fontSize: 15, fontWeight: "700", marginTop: 8, textDecorationLine: "underline" },
 });

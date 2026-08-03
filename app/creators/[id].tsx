@@ -1,4 +1,5 @@
 import { creatorTitle, hourlyRate, type Creator } from "@/data/creators";
+import ProfileAvatar from "@/components/profile-avatar";
 import { supabase } from "@/lib/supabase";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -15,7 +16,7 @@ export default function CreatorProfileScreen() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, city, services, portfolio_url, portfolio_urls, starting_rate, bio, travel_miles, avatar_url, is_verified")
+      .select("id, display_name, city, services, portfolio_url, portfolio_urls, starting_rate, bio, travel_miles, avatar_url, avatar_color, is_verified")
       .eq("id", id)
       .eq("is_listed", true)
       .maybeSingle();
@@ -52,7 +53,7 @@ export default function CreatorProfileScreen() {
     <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
       <StatusBar style="light" />
       <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
-      <View style={styles.hero}><Text style={styles.heroInitial}>{creator.display_name.charAt(0).toUpperCase()}</Text></View>
+      <View style={styles.hero}><ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={176} /></View>
       <View style={styles.content}>
         <Text style={styles.eyebrow}>{creatorTitle(creator.services).toUpperCase()}</Text>
         <View style={styles.nameRow}><Text style={styles.title}>{creator.display_name}</Text>{creator.is_verified ? <View style={styles.verified}><Text style={styles.verifiedText}>✓ VERIFIED CREATOR</Text></View> : null}</View>
@@ -74,7 +75,6 @@ const styles = StyleSheet.create({
   backButton: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44, paddingRight: 24 },
   backButtonText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },
   hero: { alignItems: "center", backgroundColor: "#1d4259", borderRadius: 24, height: 300, justifyContent: "center", marginTop: 8 },
-  heroInitial: { color: "#7ce0d6", fontSize: 110, fontWeight: "800" },
   content: { paddingTop: 24 },
   eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.4 },
   title: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, lineHeight: 44, marginTop: 8 },

@@ -1,5 +1,5 @@
 import { creatorTitle, hourlyRate, type Creator } from "@/data/creators";
-import { Image } from "expo-image";
+import ProfileAvatar from "@/components/profile-avatar";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -9,7 +9,6 @@ type CreatorCardProps = {
 };
 
 export default function CreatorCard({ creator, spot }: CreatorCardProps) {
-  const hasAvatar = Boolean(creator.avatar_url);
   const matchingAvailability = creator.availability?.filter((slot) => !spot || !slot.surf_spot || slot.surf_spot === spot) ?? [];
   const weekdayNames = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const availableDays = [...new Set(matchingAvailability.map(slot => weekdayNames[slot.weekday]))].join(", ");
@@ -23,11 +22,7 @@ export default function CreatorCard({ creator, spot }: CreatorCardProps) {
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       <View style={styles.media}>
-        {hasAvatar ? (
-          <Image accessibilityLabel={`${creator.display_name}'s profile`} contentFit="cover" source={creator.avatar_url!} style={styles.image} transition={180} />
-        ) : (
-          <View style={styles.fallbackAvatar}><Text style={styles.avatarInitial}>{creator.display_name.charAt(0).toUpperCase()}</Text></View>
-        )}
+        <ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={124} />
         <View style={styles.mediaOverlay} />
         <View style={styles.availablePill}><View style={styles.availableDot} /><Text style={styles.availableText}>LOCAL CREATOR</Text></View>
         <View style={styles.pricePill}><Text style={styles.pricePillText}>{hourlyRate(creator)}</Text></View>
@@ -50,10 +45,7 @@ export default function CreatorCard({ creator, spot }: CreatorCardProps) {
 const styles = StyleSheet.create({
   card: { backgroundColor: "#102a39", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 24, borderWidth: 1, overflow: "hidden" },
   cardPressed: { opacity: 0.88, transform: [{ scale: 0.99 }] },
-  media: { backgroundColor: "#1b4b61", height: 210, overflow: "hidden", position: "relative", width: "100%" },
-  image: { height: "100%", width: "100%" },
-  fallbackAvatar: { alignItems: "center", backgroundColor: "#1c5367", flex: 1, justifyContent: "center" },
-  avatarInitial: { color: "#7ce0d6", fontSize: 76, fontWeight: "900" },
+  media: { alignItems: "center", backgroundColor: "#1b4b61", height: 210, justifyContent: "center", overflow: "hidden", position: "relative", width: "100%" },
   mediaOverlay: { backgroundColor: "rgba(1,16,27,0.18)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 },
   availablePill: { alignItems: "center", backgroundColor: "rgba(5,26,37,0.78)", borderColor: "rgba(255,255,255,0.16)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, left: 14, paddingHorizontal: 10, paddingVertical: 6, position: "absolute", top: 14 },
   availableDot: { backgroundColor: "#56d6c9", borderRadius: 4, height: 7, width: 7 },

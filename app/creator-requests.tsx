@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase";
+import FeedbackPressable from "@/components/feedback-pressable";
+import * as Haptics from "expo-haptics";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -81,6 +83,11 @@ export default function CreatorRequestsScreen() {
       Alert.alert("Could not update request", error.message);
       return;
     }
+    if (process.env.EXPO_OS === "ios") {
+      void Haptics.notificationAsync(
+        status === "accepted" ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning,
+      );
+    }
     void loadRequests();
   }
   return (
@@ -124,18 +131,22 @@ export default function CreatorRequestsScreen() {
               </Text>
               {request.status === "pending" ? (
                 <View style={styles.actions}>
-                  <Pressable
+                  <FeedbackPressable
+                    haptic="none"
                     onPress={() => void updateRequest(request.id, "declined")}
                     style={styles.decline}
+                    wrapperStyle={styles.actionButtonWrapper}
                   >
                     <Text style={styles.declineText}>Decline</Text>
-                  </Pressable>
-                  <Pressable
+                  </FeedbackPressable>
+                  <FeedbackPressable
+                    haptic="none"
                     onPress={() => void updateRequest(request.id, "accepted")}
                     style={styles.accept}
+                    wrapperStyle={styles.actionButtonWrapper}
                   >
                     <Text style={styles.acceptText}>Accept</Text>
-                  </Pressable>
+                  </FeedbackPressable>
                 </View>
               ) : (
                 <Text style={styles.status}>{request.status}</Text>
@@ -223,6 +234,7 @@ const styles = StyleSheet.create({
   notes: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 9 },
   contact: { color: "#7ce0d6", fontSize: 14, fontWeight: "700", marginTop: 12 },
   actions: { flexDirection: "row", gap: 10, marginTop: 18 },
+  actionButtonWrapper: { flex: 1 },
   decline: {
     alignItems: "center",
     borderColor: "rgba(255,255,255,.25)",

@@ -1,10 +1,11 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AuthForm from "@/components/AuthForm";
+import FeedbackPressable from "@/components/feedback-pressable";
 
 const valueProps = [
   ["Discover", "Find a local surf photographer or filmmaker around your break."],
@@ -12,10 +13,39 @@ const valueProps = [
   ["Book", "Send a request with the session details that matter."],
 ];
 
+const shareUrl = "https://wavelens.expo.app";
+const shareMessage =
+  "I found WaveLens—a better way to book surf photographers and videographers for your next session.";
+
 export default function HomeScreen() {
   const [showAuth, setShowAuth] = useState(false);
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
+
+  async function shareWaveLens() {
+    try {
+      if (process.env.EXPO_OS === "web") {
+        if (typeof navigator !== "undefined" && navigator.share) {
+          await navigator.share({ text: shareMessage, title: "Share WaveLens", url: shareUrl });
+        } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(shareUrl);
+          Alert.alert("WaveLens link copied", "Paste it into a message to share it with a friend.");
+        } else {
+          Alert.alert("Share WaveLens", shareUrl);
+        }
+        return;
+      }
+
+      await Share.share(
+        process.env.EXPO_OS === "ios"
+          ? { message: shareMessage, title: "Share WaveLens", url: shareUrl }
+          : { message: `${shareMessage}\n\n${shareUrl}`, title: "Share WaveLens" },
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      Alert.alert("Could not share WaveLens", "Please try again in a moment.");
+    }
+  }
 
   if (showAuth) {
     return (
@@ -74,10 +104,10 @@ export default function HomeScreen() {
               <Text style={[styles.headline, isWide && styles.headlineWide]}>The better way to remember your best sessions.</Text>
               <Text style={styles.description}>Book a photographer or videographer to capture your next surf session.</Text>
               <View style={styles.heroActions}>
-                <Pressable accessibilityRole="button" onPress={() => router.push("/location")} style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}>
+                <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.push("/location")} style={styles.primaryButton}>
                   <Text style={styles.primaryButtonText}>Find a creator</Text>
                   <Text style={styles.buttonArrow}>-&gt;</Text>
-                </Pressable>
+                </FeedbackPressable>
                 <Pressable accessibilityRole="button" onPress={() => router.push("/become-a-creator")} style={styles.secondaryButton}>
                   <Text style={styles.secondaryButtonText}>I shoot surf</Text>
                 </Pressable>
@@ -109,6 +139,27 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
+          </View>
+
+          <View style={[styles.shareCard, isWide && styles.shareCardWide]}>
+            <View style={styles.shareMark}>
+              <Text style={styles.shareMarkText}>W</Text>
+            </View>
+            <View style={styles.shareCopy}>
+              <Text style={[styles.shareEyebrow, isWide && styles.shareTextWide]}>SHARE THE STOKE</Text>
+              <Text style={[styles.shareTitle, isWide && styles.shareTextWide]}>Know someone who lives for the next swell?</Text>
+              <Text style={[styles.shareText, isWide && styles.shareTextWide]}>Send them WaveLens and help their best session live beyond the lineup.</Text>
+            </View>
+            <FeedbackPressable
+              accessibilityHint="Opens your device share menu"
+              accessibilityRole="button"
+              haptic="light"
+              onPress={() => void shareWaveLens()}
+              style={styles.shareButton}
+            >
+              <Text style={styles.shareButtonIcon}>↗</Text>
+              <Text style={styles.shareButtonText}>Share WaveLens</Text>
+            </FeedbackPressable>
           </View>
 
           <View style={styles.bottomCallout}>
@@ -182,6 +233,19 @@ const styles = StyleSheet.create({
   valueNumber: { color: "#56d6c9", fontSize: 12, fontWeight: "900", letterSpacing: 1.1 },
   valueTitle: { color: "#ffffff", fontSize: 20, fontWeight: "800", letterSpacing: -0.5, marginTop: 22 },
   valueText: { color: "#9bb2c1", fontSize: 13, lineHeight: 19, marginTop: 7 },
+  shareCard: { alignItems: "center", backgroundColor: "rgba(16,42,57,0.92)", borderColor: "rgba(86,214,201,0.24)", borderCurve: "continuous", borderRadius: 24, borderWidth: 1, gap: 16, marginTop: 34, padding: 22 },
+  shareCardWide: { flexDirection: "row", paddingHorizontal: 28, paddingVertical: 25 },
+  shareMark: { alignItems: "center", backgroundColor: "rgba(86,214,201,0.14)", borderColor: "rgba(86,214,201,0.3)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, height: 52, justifyContent: "center", width: 52 },
+  shareMarkText: { color: "#7ce0d6", fontSize: 22, fontWeight: "900" },
+  shareCopy: { flex: 1 },
+  shareEyebrow: { color: "#8aede2", fontSize: 10, fontWeight: "900", letterSpacing: 1.2, textAlign: "center" },
+  shareTitle: { color: "#ffffff", fontSize: 21, fontWeight: "900", letterSpacing: -0.6, lineHeight: 26, marginTop: 7, textAlign: "center" },
+  shareText: { color: "#9bb2c1", fontSize: 13, lineHeight: 19, marginTop: 6, textAlign: "center" },
+  shareTextWide: { textAlign: "left" },
+  shareButton: { alignItems: "center", backgroundColor: "#ffffff", borderCurve: "continuous", borderRadius: 15, flexDirection: "row", gap: 9, justifyContent: "center", minHeight: 50, paddingHorizontal: 18 },
+  shareButtonPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
+  shareButtonIcon: { color: "#061827", fontSize: 17, fontWeight: "900" },
+  shareButtonText: { color: "#061827", fontSize: 14, fontWeight: "900" },
   bottomCallout: { alignItems: "center", backgroundColor: "#56d6c9", borderCurve: "continuous", borderRadius: 24, flexDirection: "row", flexWrap: "wrap", gap: 18, justifyContent: "space-between", marginTop: 34, padding: 22 },
   bottomCalloutTitle: { color: "#061827", fontSize: 21, fontWeight: "900", letterSpacing: -0.7 },
   bottomCalloutText: { color: "#174457", fontSize: 13, marginTop: 5 },

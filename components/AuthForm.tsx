@@ -8,22 +8,41 @@ import {
 } from "react-native";
 
 import { supabase } from "@/lib/supabase";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { isStrongPassword } from "@/utils/password";
+import { getRandomAvatarColor } from "@/utils/avatar";
+import { router } from "expo-router";
+import Animated, { FadeIn, FadeOut, LinearTransition, ReduceMotion } from "react-native-reanimated";
+import FeedbackPressable from "@/components/feedback-pressable";
 
 type AuthFormProps = {
   onAuthenticated?: () => void;
 };
 
 export default function AuthForm({ onAuthenticated }: AuthFormProps) {
+  const [mode, setMode] = useState<"signIn" | "signUp">("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"error" | "success">("error");
 
+  function changeMode(nextMode: "signIn" | "signUp") {
+    setMode(nextMode);
+    setMessage("");
+    setMessageType("error");
+  }
+
   async function signUp() {
     if (!email.trim() || !password) {
       setMessageType("error");
       setMessage("Enter an email and password.");
+      return;
+    }
+
+    if (!isStrongPassword(password)) {
+      setMessageType("error");
+      setMessage("Choose a password that meets every requirement below.");
       return;
     }
 
@@ -33,6 +52,9 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          data: { avatar_color: getRandomAvatarColor() },
+        },
       });
       if (error) throw error;
       if (!data.session) {
@@ -81,7 +103,9 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
     <View style={styles.container}>
       <Text style={styles.title}>WaveLens</Text>
       <Text style={styles.subtitle}>
-        Book surf photographers and videographers.
+        {mode === "signIn"
+          ? "Sign in to manage your sessions and account."
+          : "Create an account to book surf photographers and videographers."}
       </Text>
 
       <TextInput
@@ -103,6 +127,12 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         style={styles.input}
       />
 
+      {mode === "signUp" ? (
+        <Animated.View entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)} exiting={FadeOut.duration(120).reduceMotion(ReduceMotion.System)} layout={LinearTransition.duration(180).reduceMotion(ReduceMotion.System)}>
+          <PasswordRequirements heading="Your password needs:" password={password} />
+        </Animated.View>
+      ) : null}
+
       {message ? (
         <Text
           accessibilityLiveRegion="polite"
@@ -112,25 +142,37 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         </Text>
       ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={signIn}
-        disabled={loading}
-        style={styles.primaryButton}
-      >
-        <Text style={styles.primaryButtonText}>
-          {loading ? "Please wait…" : "Sign in"}
-        </Text>
-      </Pressable>
+      {mode === "signIn" ? (
+        <>
+          <FeedbackPressable accessibilityRole="button" haptic="light" onPress={signIn} disabled={loading} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>{loading ? "Please wait…" : "Sign in"}</Text>
+          </FeedbackPressable>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={signUp}
-        disabled={loading}
-        style={styles.secondaryButton}
-      >
-        <Text style={styles.secondaryButtonText}>Create account</Text>
-      </Pressable>
+          <Pressable accessibilityRole="link" onPress={() => router.push("/forgot-password")} disabled={loading} style={styles.forgotPasswordButton}>
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          </Pressable>
+
+          <View style={styles.accountPrompt}>
+            <Text style={styles.accountPromptText}>New here?</Text>
+            <Pressable accessibilityRole="button" onPress={() => changeMode("signUp")} disabled={loading} style={styles.modeButton}>
+              <Text style={styles.modeButtonText}>Create an account</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <>
+          <FeedbackPressable accessibilityRole="button" haptic="light" onPress={signUp} disabled={loading} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>{loading ? "Creating account…" : "Create account"}</Text>
+          </FeedbackPressable>
+
+          <View style={styles.accountPrompt}>
+            <Text style={styles.accountPromptText}>Already have an account?</Text>
+            <Pressable accessibilityRole="button" onPress={() => changeMode("signIn")} disabled={loading} style={styles.modeButton}>
+              <Text style={styles.modeButtonText}>Sign in</Text>
+            </Pressable>
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -183,16 +225,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#111827",
-    borderRadius: 12,
-    padding: 16,
+  accountPrompt: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, justifyContent: "center", minHeight: 44 },
+  accountPromptText: { color: "#667085", fontSize: 15 },
+  modeButton: { justifyContent: "center", minHeight: 44, paddingHorizontal: 2 },
+  modeButtonText: { color: "#167f78", fontSize: 15, fontWeight: "700" },
+  forgotPasswordButton: {
     alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
   },
-  secondaryButtonText: {
-    color: "#111827",
-    fontSize: 16,
+  forgotPasswordText: {
+    color: "#344054",
+    fontSize: 15,
     fontWeight: "600",
   },
 });

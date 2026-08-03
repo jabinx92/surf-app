@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import ProfileAvatar, { defaultAvatarColor } from "@/components/profile-avatar";
 import { router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -11,6 +12,9 @@ export default function AccountScreen() {
   const isWide = width >= 860;
   const { notice } = useLocalSearchParams<{ notice?: string }>();
   const [email, setEmail] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("WaveLens user");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarColor, setAvatarColor] = useState(defaultAvatarColor);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -23,6 +27,10 @@ export default function AccountScreen() {
     const { data } = await supabase.auth.getUser();
     setEmail(data.user?.email ?? null);
     if (data.user) {
+      const metadata = data.user.user_metadata ?? {};
+      setDisplayName(metadata.display_name ?? data.user.email?.split("@")[0] ?? "WaveLens user");
+      setAvatarUrl(metadata.avatar_url ?? null);
+      setAvatarColor(metadata.avatar_color ?? defaultAvatarColor);
       const [adminResult, creatorResult, applicationResult, notificationResult] = await Promise.all([
         supabase.rpc("is_wavelens_admin"),
         supabase.from("creator_profiles").select("id").eq("owner_id", data.user.id).maybeSingle(),
@@ -121,7 +129,10 @@ export default function AccountScreen() {
             </View>
           </View>
           <View style={[styles.sideColumn, isWide && styles.sideColumnWide]}>
-            <View style={styles.emailCard}><Text style={styles.emailLabel}>SIGNED IN AS</Text><Text selectable style={styles.email}>{email}</Text></View>
+            <View style={styles.emailCard}>
+              <ProfileAvatar color={avatarColor} imageUrl={avatarUrl} name={displayName} size={72} />
+              <View style={styles.identityText}><Text style={styles.emailLabel}>SIGNED IN AS</Text><Text selectable style={styles.identityName}>{displayName}</Text><Text selectable style={styles.email}>{email}</Text></View>
+            </View>
             {creatorStatus === "approved" ? (
               <View accessibilityLabel="Creator application approved" style={styles.creatorStatusCard}>
                 <Text style={styles.creatorStatusBadge}>✓ APPROVED CREATOR</Text>
@@ -191,9 +202,11 @@ const styles = StyleSheet.create({
   actionArrow: { color: "#56d6c9", fontSize: 20, fontWeight: "700", marginTop: 5 },
   adminCard: { borderColor: "rgba(86,214,201,0.28)" },
   buttonPressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
-  emailCard: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.13)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, padding: 17 },
+  emailCard: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.13)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 14, padding: 17 },
+  identityText: { flex: 1 },
+  identityName: { color: "#ffffff", fontSize: 18, fontWeight: "900", marginTop: 5 },
   emailLabel: { color: "#91a8b8", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
-  email: { color: "#ffffff", fontSize: 16, fontWeight: "700", marginTop: 8 },
+  email: { color: "#91a8b8", fontSize: 13, marginTop: 3 },
   reportConfirmation: { backgroundColor: "rgba(86,214,201,0.1)", borderColor: "rgba(86,214,201,0.3)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, gap: 6, padding: 17 },
   reportConfirmationTitle: { color: "#7ce0d6", fontSize: 16, fontWeight: "900" },
   reportConfirmationText: { color: "#d9e5ec", fontSize: 14, lineHeight: 20 },

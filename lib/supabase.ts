@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
 import { AppState, Platform } from "react-native";
+import NodeWebSocket from "ws";
 import "react-native-url-polyfill/auto";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
@@ -20,6 +21,10 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     detectSessionInUrl: false,
     lock: processLock,
   },
+  realtime:
+    Platform.OS === "web" && typeof globalThis.WebSocket === "undefined"
+      ? { transport: NodeWebSocket as unknown as typeof globalThis.WebSocket }
+      : undefined,
 });
 
 if (Platform.OS !== "web") {
