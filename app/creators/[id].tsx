@@ -16,7 +16,7 @@ export default function CreatorProfileScreen() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, city, services, portfolio_url, portfolio_urls, starting_rate, bio, travel_miles, avatar_url, avatar_color, is_verified")
+      .select("id, display_name, city, services, portfolio_url, portfolio_urls, starting_rate, bio, equipment_setup, travel_miles, avatar_url, avatar_color, is_verified")
       .eq("id", id)
       .eq("is_listed", true)
       .maybeSingle();
@@ -48,6 +48,9 @@ export default function CreatorProfileScreen() {
   }
 
   const portfolioLinks = creator.portfolio_urls?.length ? creator.portfolio_urls : [creator.portfolio_url];
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : null;
 
   return (
     <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
@@ -58,10 +61,28 @@ export default function CreatorProfileScreen() {
         <Text style={styles.eyebrow}>{creatorTitle(creator.services).toUpperCase()}</Text>
         <View style={styles.nameRow}><Text style={styles.title}>{creator.display_name}</Text>{creator.is_verified ? <View style={styles.verified}><Text style={styles.verifiedText}>✓ VERIFIED CREATOR</Text></View> : null}</View>
         <Text style={styles.meta}>{creator.city} - travels up to {creator.travel_miles} miles</Text>
+        <View style={styles.ratingSummary}>
+          <Text style={styles.ratingStar}>★</Text>
+          <Text style={styles.ratingValue}>{averageRating ? averageRating.toFixed(1) : "New"}</Text>
+          <Text style={styles.ratingCount}>{reviews.length ? `${reviews.length} verified ${reviews.length === 1 ? "review" : "reviews"}` : "No reviews yet"}</Text>
+        </View>
         <Text style={styles.description}>{creator.bio || "Surf sessions captured with a local eye and a focus on the moments that matter."}</Text>
         <View style={styles.services}>{creator.services.map((service) => <View key={service} style={styles.serviceBadge}><Text style={styles.serviceText}>{service}</Text></View>)}</View>
+        {creator.equipment_setup ? <View style={styles.setupCard}><Text style={styles.setupHeading}>CREATOR SETUP</Text><Text selectable style={styles.setupText}>{creator.equipment_setup}</Text></View> : null}
         <View style={styles.portfolioList}>{portfolioLinks.map((portfolioUrl, index) => <Pressable accessibilityRole="link" key={portfolioUrl} onPress={() => void openPortfolio(portfolioUrl)} style={styles.portfolioButton}><Text style={styles.portfolioText}>View portfolio {portfolioLinks.length > 1 ? index + 1 : ""}</Text></Pressable>)}</View>
-        <View style={styles.reviewSection}><Text style={styles.reviewHeading}>REVIEWS {reviews.length ? `· ${(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)} ★` : ""}</Text>{reviews.length === 0 ? <Text style={styles.noReviews}>No reviews yet.</Text> : reviews.map(review => <View key={review.id} style={styles.review}><Text style={styles.reviewStars}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</Text>{review.comment ? <Text selectable style={styles.reviewComment}>{review.comment}</Text> : null}</View>)}</View>
+        <View style={styles.reviewSection}>
+          <Text style={styles.reviewHeading}>SURFER REVIEWS</Text>
+          {reviews.length === 0 ? <Text style={styles.noReviews}>This creator has not received a review yet.</Text> : reviews.map((review) => (
+            <View key={review.id} style={styles.review}>
+              <View style={styles.reviewTopRow}>
+                <Text accessibilityLabel={`${review.rating} out of 5 stars`} style={styles.reviewStars}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</Text>
+                <View style={styles.verifiedSession}><Text style={styles.verifiedSessionText}>✓ VERIFIED SESSION</Text></View>
+              </View>
+              {review.comment ? <Text selectable style={styles.reviewComment}>{review.comment}</Text> : <Text style={styles.ratingOnly}>Rating only</Text>}
+              <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</Text>
+            </View>
+          ))}
+        </View>
         <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/report", params: { creatorId: creator.id } })} style={styles.reportButton}><Text style={styles.reportText}>Report this profile</Text></Pressable>
         <View style={styles.bookingRow}><View><Text style={styles.rateLabel}>STARTING HOURLY RATE</Text><Text style={styles.rate}>{hourlyRate(creator)}</Text></View><Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/book", params: { creatorId: creator.id, ...(spot ? { spot } : {}) } })} style={styles.bookButton}><Text style={styles.bookButtonText}>Request to book</Text></Pressable></View>
       </View>
@@ -82,10 +103,17 @@ const styles = StyleSheet.create({
   verified: { backgroundColor: "rgba(86,214,201,.14)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
   verifiedText: { color: "#7ce0d6", fontSize: 10, fontWeight: "900", letterSpacing: .7 },
   meta: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 8 },
+  ratingSummary: { alignItems: "center", flexDirection: "row", gap: 7, marginTop: 12 },
+  ratingStar: { color: "#f5b841", fontSize: 18 },
+  ratingValue: { color: "#ffffff", fontSize: 16, fontWeight: "900" },
+  ratingCount: { color: "#91a8b8", fontSize: 13 },
   description: { color: "#d9e5ec", fontSize: 17, lineHeight: 26, marginTop: 22 },
   services: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 22 },
   serviceBadge: { backgroundColor: "#1d4259", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   serviceText: { color: "#ffffff", fontSize: 13, fontWeight: "700" },
+  setupCard: { backgroundColor: "rgba(86,214,201,.08)", borderColor: "rgba(86,214,201,.24)", borderCurve: "continuous", borderRadius: 17, borderWidth: 1, marginTop: 22, padding: 16 },
+  setupHeading: { color: "#7ce0d6", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
+  setupText: { color: "#d9e5ec", fontSize: 15, lineHeight: 23, marginTop: 8 },
   portfolioList: { alignItems: "flex-start", gap: 9, marginTop: 22 },
   portfolioButton: { borderColor: "rgba(124,224,214,0.5)", borderRadius: 12, borderWidth: 1, minHeight: 46, justifyContent: "center", paddingHorizontal: 16 },
   portfolioText: { color: "#7ce0d6", fontSize: 14, fontWeight: "800" },
@@ -93,8 +121,13 @@ const styles = StyleSheet.create({
   reviewHeading: { color: "#91a8b8", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
   noReviews: { color: "#698596", fontSize: 14 },
   review: { backgroundColor: "rgba(255,255,255,.05)", borderRadius: 15, padding: 14 },
+  reviewTopRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" },
   reviewStars: { color: "#f5b841", fontSize: 16 },
+  verifiedSession: { backgroundColor: "rgba(86,214,201,.12)", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
+  verifiedSessionText: { color: "#7ce0d6", fontSize: 9, fontWeight: "900", letterSpacing: .6 },
   reviewComment: { color: "#d9e5ec", fontSize: 14, lineHeight: 21, marginTop: 7 },
+  ratingOnly: { color: "#698596", fontSize: 13, fontStyle: "italic", marginTop: 7 },
+  reviewDate: { color: "#698596", fontSize: 11, marginTop: 9 },
   reportButton: { alignSelf: "flex-start", marginTop: 18, minHeight: 42, justifyContent: "center" },
   reportText: { color: "#91a8b8", fontSize: 13, fontWeight: "700" },
   bookingRow: { alignItems: "center", borderTopColor: "rgba(255, 255, 255, 0.12)", borderTopWidth: 1, flexDirection: "row", gap: 16, justifyContent: "space-between", marginTop: 32, paddingTop: 24 },

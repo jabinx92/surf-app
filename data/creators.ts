@@ -11,6 +11,7 @@ export type Creator = {
   portfolio_urls?: string[];
   starting_rate: number;
   bio: string;
+  equipment_setup: string;
   travel_miles: number;
   avatar_url: string | null;
   avatar_color: string;

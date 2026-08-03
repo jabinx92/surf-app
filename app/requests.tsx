@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
+import { formatSessionDate, formatSessionTime } from "@/utils/session-time";
 import {
   ActivityIndicator,
   Pressable,
@@ -14,13 +15,22 @@ import {
 type BookingRequest = {
   id: string;
   creator_profile_id: string;
+  creator_display_name: string | null;
   service_type: string;
   session_date: string;
+  session_start_time: string | null;
   session_hours: number;
   surf_spot: string;
   status: "pending" | "accepted" | "declined" | "cancelled" | "completed";
-  creator: { display_name: string }[] | null;
+  completed_at: string | null;
+  creator_reviews: { id: string }[] | null;
 };
+
+const reviewIsDue = (request: BookingRequest) =>
+  request.status === "completed" &&
+  Boolean(request.completed_at) &&
+  Date.now() - new Date(request.completed_at as string).getTime() >= 24 * 60 * 60 * 1000 &&
+  (request.creator_reviews?.length ?? 0) === 0;
 
 export default function RequestsScreen() {
   const [requests, setRequests] = useState<BookingRequest[]>([]);
@@ -40,7 +50,7 @@ export default function RequestsScreen() {
       const { data, error } = await supabase
         .from("booking_requests")
         .select(
-          "id, creator_profile_id, service_type, session_date, session_hours, surf_spot, status, creator:creator_profiles(display_name)",
+          "id, creator_profile_id, creator_display_name, service_type, session_date, session_start_time, session_hours, surf_spot, status, completed_at, creator_reviews(id)",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -108,14 +118,15 @@ export default function RequestsScreen() {
               <View style={styles.cardHeader}>
                 <View style={styles.cardMain}>
                   <Text style={styles.creatorName}>
-                    {request.creator?.[0]?.display_name ?? "WaveLens creator"}
+                    Booking with {request.creator_display_name ?? "creator unavailable"}
+                  </Text>
+                  <Text style={styles.schedule}>
+                    {formatSessionDate(request.session_date)} at {formatSessionTime(request.session_start_time)} · {request.surf_spot}
                   </Text>
                   <Text style={styles.sessionInfo}>
                     {request.service_type} · {request.session_hours}{" "}
-                    {request.session_hours === 1 ? "hour" : "hours"} ·{" "}
-                    {request.session_date}
+                    {request.session_hours === 1 ? "hour" : "hours"}
                   </Text>
-                  <Text style={styles.spot}>{request.surf_spot}</Text>
                 </View>
                 <View
                   style={[
@@ -132,6 +143,29 @@ export default function RequestsScreen() {
                   <Text style={styles.statusText}>{request.status}</Text>
                 </View>
               </View>
+              {reviewIsDue(request) ? (
+                <View style={styles.reminder}>
+                  <Text style={styles.reminderEyebrow}>ONE QUICK FAVOR</Text>
+                  <Text style={styles.reminderTitle}>
+                    How was your session with {request.creator_display_name ?? "your creator"}?
+                  </Text>
+                  <Text style={styles.reminderBody}>
+                    Your photos are in. Help other surfers book confidently by sharing how it went.
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/review/[bookingId]",
+                        params: { bookingId: request.id, creatorId: request.creator_profile_id },
+                      })
+                    }
+                    style={({ pressed }) => [styles.reminderButton, pressed && styles.buttonPressed]}
+                  >
+                    <Text style={styles.reminderButtonText}>Leave a review</Text>
+                  </Pressable>
+                </View>
+              ) : null}
               <View style={styles.actions}>
                 <Pressable
                   onPress={() =>
@@ -155,7 +189,7 @@ export default function RequestsScreen() {
                 >
                   <Text style={styles.actionText}>Messages</Text>
                 </Pressable>
-                {request.status === "completed" ? (
+                {request.status === "completed" && !reviewIsDue(request) ? (
                   <Pressable
                     onPress={() =>
                       router.push({
@@ -236,10 +270,24 @@ const styles = StyleSheet.create({
     gap: 10,
     justifyContent: "space-between",
   },
+  reminder: {
+    backgroundColor: "#0d3b45",
+    borderColor: "rgba(124,224,214,.35)",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 17,
+    padding: 17,
+  },
+  reminderEyebrow: { color: "#7ce0d6", fontSize: 11, fontWeight: "900", letterSpacing: 1.3 },
+  reminderTitle: { color: "#fff", fontSize: 20, fontWeight: "900", lineHeight: 26, marginTop: 8 },
+  reminderBody: { color: "#c5d9df", fontSize: 14, lineHeight: 21, marginTop: 7 },
+  reminderButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 12, marginTop: 15, paddingVertical: 13 },
+  reminderButtonText: { color: "#061827", fontSize: 15, fontWeight: "900" },
+  buttonPressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   cardMain: { flex: 1 },
   creatorName: { color: "#fff", fontSize: 18, fontWeight: "900" },
+  schedule: { color: "#7ce0d6", fontSize: 14, fontWeight: "800", lineHeight: 20, marginTop: 7 },
   sessionInfo: { color: "#b9c9d6", fontSize: 14, marginTop: 6 },
-  spot: { color: "#7ce0d6", fontSize: 13, fontWeight: "800", marginTop: 7 },
   status: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   pending: { backgroundColor: "rgba(245,184,65,.18)" },
   accepted: { backgroundColor: "rgba(86,214,201,.16)" },

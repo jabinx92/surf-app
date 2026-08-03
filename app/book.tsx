@@ -1,6 +1,8 @@
 import { hourlyRate, serviceOptions, type Creator } from "@/data/creators";
 import { supabase } from "@/lib/supabase";
 import { SessionDatePicker } from "@/components/session-date-picker";
+import { SessionTimePicker } from "@/components/session-time-picker";
+import { formatSessionDate, formatSessionTime } from "@/utils/session-time";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -17,11 +19,13 @@ export default function BookingScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [serviceType, setServiceType] = useState<(typeof serviceOptions)[number]>("Photography");
   const [sessionDate, setSessionDate] = useState("");
+  const [sessionStartTime, setSessionStartTime] = useState("");
   const [sessionHours, setSessionHours] = useState<(typeof sessionLengths)[number]>(1);
   const [notes, setNotes] = useState("");
   const [contactDetails, setContactDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMessage, setFormMessage] = useState("");
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const loadCreator = useCallback(async () => {
@@ -42,6 +46,7 @@ export default function BookingScreen() {
 
   async function submitRequest() {
     if (!creator) return;
+    setHasAttemptedSubmit(true);
     setFormMessage("");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
       setFormMessage("Choose your session date from the calendar.");
@@ -49,6 +54,10 @@ export default function BookingScreen() {
     }
     if (!spot?.trim()) {
       setFormMessage("Go back and select the surf spot where you want to be filmed.");
+      return;
+    }
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime)) {
+      setFormMessage("Choose the time you want your session to begin.");
       return;
     }
     if (contactDetails.trim().length < 2) {
@@ -65,8 +74,10 @@ export default function BookingScreen() {
       const { error } = await supabase.from("booking_requests").insert({
         customer_id: userData.user.id,
         creator_profile_id: creator.id,
+        creator_display_name: creator.display_name,
         service_type: serviceType,
         session_date: sessionDate,
+        session_start_time: sessionStartTime,
         session_hours: sessionHours,
         surf_spot: spot.trim(),
         notes: notes.trim(),
@@ -98,7 +109,7 @@ export default function BookingScreen() {
           <Text selectable style={styles.confirmationBody}>{creator.display_name} can now review your request and reply through WaveLens.</Text>
           <View style={styles.confirmationCard}>
             <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>CREATOR</Text><Text selectable style={styles.confirmationValue}>{creator.display_name}</Text></View>
-            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>DATE</Text><Text selectable style={styles.confirmationValue}>{sessionDate}</Text></View>
+            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>WHEN</Text><Text selectable style={styles.confirmationValue}>{formatSessionDate(sessionDate)} at {formatSessionTime(sessionStartTime)}</Text></View>
             <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SURF SPOT</Text><Text selectable style={styles.confirmationValue}>{spot}</Text></View>
             <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SESSION</Text><Text selectable style={styles.confirmationValue}>{sessionHours} {sessionHours === 1 ? "hour" : "hours"} · {serviceType}</Text></View>
           </View>
@@ -119,7 +130,8 @@ export default function BookingScreen() {
       <Text style={styles.title}>Book {creator.display_name}</Text>
       <Text selectable style={styles.subtitle}>{hourlyRate(creator)} starting rate · {creator.city}</Text>
 
-      <View style={styles.spotCard}><Text style={styles.spotLabel}>SURF SPOT</Text><Text selectable style={styles.spotName}>{spot || "Choose a surf spot before sending"}</Text></View>
+      <Text style={styles.requiredNote}>Fields marked REQUIRED must be completed.</Text>
+      <View style={[styles.spotCard, hasAttemptedSubmit && !spot?.trim() && styles.fieldInvalid]}><View style={styles.labelRow}><Text style={styles.spotLabel}>SURF SPOT</Text><Text style={styles.required}>REQUIRED</Text></View><Text selectable style={styles.spotName}>{spot || "Choose a surf spot before sending"}</Text></View>
 
       <View style={styles.estimateCard}>
         <View><Text style={styles.estimateLabel}>ESTIMATED STARTING TOTAL</Text><Text selectable style={styles.estimateTotal}>${estimatedTotal}</Text></View>
@@ -128,9 +140,10 @@ export default function BookingScreen() {
 
       <View style={styles.section}><Text style={styles.label}>WHAT DO YOU NEED?</Text><View style={styles.options}>{serviceOptions.filter((option) => creator.services.includes(option)).map((option) => <Pressable accessibilityRole="button" key={option} onPress={() => setServiceType(option)} style={[styles.option, serviceType === option && styles.optionSelected]}><Text style={[styles.optionText, serviceType === option && styles.optionTextSelected]}>{option}</Text></Pressable>)}</View></View>
       <View style={styles.section}><Text style={styles.label}>SESSION LENGTH</Text><View style={styles.options}>{sessionLengths.map((hours) => <Pressable accessibilityLabel={`${hours} ${hours === 1 ? "hour" : "hours"}`} accessibilityRole="button" key={hours} onPress={() => setSessionHours(hours)} style={[styles.option, sessionHours === hours && styles.optionSelected]}><Text style={[styles.optionText, sessionHours === hours && styles.optionTextSelected]}>{hours} {hours === 1 ? "hour" : "hours"}</Text></Pressable>)}</View></View>
-      <View style={styles.section}><Text style={styles.label}>SESSION DATE</Text><SessionDatePicker onChange={setSessionDate} value={sessionDate} /></View>
-      <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Surf spot, preferred time, and anything they should know." placeholderTextColor="#698596" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
-      <View style={styles.section}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" value={contactDetails} style={styles.input} /></View>
+      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>SESSION DATE</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? styles.fieldInvalid : undefined}><SessionDatePicker onChange={setSessionDate} value={sessionDate} /></View>{hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a date to continue.</Text> : null}</View>
+      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>START TIME</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? styles.fieldInvalid : undefined}><SessionTimePicker onChange={setSessionStartTime} value={sessionStartTime} /></View>{hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a start time to continue.</Text> : null}</View>
+      <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Conditions, meeting point, and anything else they should know." placeholderTextColor="#698596" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
+      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><Text style={styles.required}>REQUIRED</Text></View><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" value={contactDetails} style={[styles.input,hasAttemptedSubmit&&contactDetails.trim().length<2&&styles.fieldInvalid]} />{hasAttemptedSubmit&&contactDetails.trim().length<2?<Text accessibilityRole="alert" style={styles.inlineError}>Add an email, phone number, or Instagram handle.</Text>:null}</View>
       {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text></View> : null}
       <FeedbackPressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} haptic="light" onPress={() => void submitRequest()} style={[styles.submitButton, isSubmitting && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></FeedbackPressable>
       <Text selectable style={styles.footnote}>WaveLens does not process payments. Confirm final scope and payment directly with the creator.</Text>
@@ -146,6 +159,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.5, marginTop: 16 },
   title: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, marginTop: 10 },
   subtitle: { color: "#b9c9d6", fontSize: 16, marginTop: 9 },
+  requiredNote: { color: "#91a8b8", fontSize: 12, marginTop: 22 },
   spotCard: { backgroundColor: "rgba(255,255,255,0.055)", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, marginTop: 22, padding: 16 },
   spotLabel: { color: "#91a8b8", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
   spotName: { color: "#ffffff", fontSize: 17, fontWeight: "800", marginTop: 6 },
@@ -154,7 +168,11 @@ const styles = StyleSheet.create({
   estimateTotal: { color: "#ffffff", fontSize: 28, fontWeight: "900", letterSpacing: -0.8, marginTop: 5 },
   estimateDetail: { color: "#d2f4ef", fontSize: 13, fontWeight: "700", textAlign: "right" },
   section: { marginTop: 28 },
+  labelRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
   label: { color: "#91a8b8", fontSize: 11, fontWeight: "800", letterSpacing: 1.1, marginBottom: 12 },
+  required: { color: "#7ce0d6", fontSize: 9, fontWeight: "900", letterSpacing: 1, marginBottom: 12 },
+  fieldInvalid: { borderColor: "#ffb15c", borderRadius: 17, borderWidth: 1 },
+  inlineError: { color: "#ffd4a3", fontSize: 13, marginTop: 8 },
   options: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   option: { borderColor: "rgba(255,255,255,0.18)", borderRadius: 999, borderWidth: 1, paddingHorizontal: 15, paddingVertical: 10 },
   optionSelected: { backgroundColor: "#56d6c9", borderColor: "#56d6c9" },

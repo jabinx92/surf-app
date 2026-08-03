@@ -11,6 +11,7 @@ type CreatorProfile = {
   avatar_color: string;
   avatar_url: string | null;
   bio: string;
+  equipment_setup: string;
   display_name: string;
   id: string;
   portfolio_url: string;
@@ -60,6 +61,7 @@ export default function ProfileSettingsScreen() {
   const [creatorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
+  const [equipmentSetup, setEquipmentSetup] = useState("");
   const [portfolioLinks, setPortfolioLinks] = useState<string[]>([""]);
   const [portfolioErrors, setPortfolioErrors] = useState<string[]>([""]);
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -83,7 +85,7 @@ export default function ProfileSettingsScreen() {
     const metadata = data.user.user_metadata ?? {};
     const { data: creator, error: creatorError } = await supabase
       .from("creator_profiles")
-      .select("id, display_name, bio, portfolio_url, portfolio_urls, avatar_url, avatar_color")
+      .select("id, display_name, bio, equipment_setup, portfolio_url, portfolio_urls, avatar_url, avatar_color")
       .eq("owner_id", data.user.id)
       .maybeSingle();
 
@@ -92,6 +94,7 @@ export default function ProfileSettingsScreen() {
     setCreatorProfile(nextCreator);
     setDisplayName(nextCreator?.display_name ?? metadata.display_name ?? "");
     setBio(nextCreator?.bio ?? metadata.bio ?? "");
+    setEquipmentSetup(nextCreator?.equipment_setup ?? metadata.equipment_setup ?? "");
     const savedLinks = nextCreator?.portfolio_urls?.length
       ? nextCreator.portfolio_urls
       : metadata.portfolio_urls?.length
@@ -196,6 +199,7 @@ export default function ProfileSettingsScreen() {
   async function saveProfile() {
     const nextName = displayName.trim();
     const nextBio = bio.trim();
+    const nextEquipmentSetup = equipmentSetup.trim();
     const nextPortfolioLinks = portfolioLinks.map(normalizePortfolioUrl);
     setMessage("");
     setIsSuccess(false);
@@ -206,6 +210,10 @@ export default function ProfileSettingsScreen() {
     }
     if (nextBio.length > 500) {
       setMessage("Description must be 500 characters or fewer.");
+      return;
+    }
+    if (nextEquipmentSetup.length > 500) {
+      setMessage("Creator setup must be 500 characters or fewer.");
       return;
     }
     const nextPortfolioErrors = portfolioLinks.map(getPortfolioUrlError);
@@ -221,20 +229,21 @@ export default function ProfileSettingsScreen() {
     setIsSaving(true);
     try {
       const { error: authError } = await supabase.auth.updateUser({
-        data: { avatar_color: avatarColor, avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, portfolio_url: nextPortfolioLinks[0] ?? "", portfolio_urls: nextPortfolioLinks },
+        data: { avatar_color: avatarColor, avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, equipment_setup: nextEquipmentSetup, portfolio_url: nextPortfolioLinks[0] ?? "", portfolio_urls: nextPortfolioLinks },
       });
       if (authError) throw authError;
 
       if (creatorProfile) {
         const { error: creatorError } = await supabase
           .from("creator_profiles")
-          .update({ avatar_color: avatarColor, avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, portfolio_url: nextPortfolioLinks[0], portfolio_urls: nextPortfolioLinks })
+          .update({ avatar_color: avatarColor, avatar_url: avatarUrl || null, bio: nextBio, display_name: nextName, equipment_setup: nextEquipmentSetup, portfolio_url: nextPortfolioLinks[0], portfolio_urls: nextPortfolioLinks })
           .eq("id", creatorProfile.id);
         if (creatorError) throw creatorError;
       }
 
       setDisplayName(nextName);
       setBio(nextBio);
+      setEquipmentSetup(nextEquipmentSetup);
       setPortfolioLinks(nextPortfolioLinks.length ? nextPortfolioLinks : [""]);
       router.replace("/account?notice=profile-saved");
     } catch (error) {
@@ -289,6 +298,11 @@ export default function ProfileSettingsScreen() {
           <TextInput accessibilityLabel="Profile description" maxLength={500} multiline onChangeText={setBio} placeholder="Tell surfers a little about yourself." placeholderTextColor="#718997" style={[styles.input, styles.bioInput]} textAlignVertical="top" value={bio} />
           <Text selectable style={styles.characterCount}>{bio.length}/500</Text>
 
+          <Text style={styles.label}>Creator setup</Text>
+          <Text selectable style={styles.fieldHelp}>List the cameras, lenses, drones, housings, microphones, or video gear you use.</Text>
+          <TextInput accessibilityLabel="Creator equipment setup" maxLength={500} multiline onChangeText={setEquipmentSetup} placeholder="Example: Sony A7 IV, 24–70mm lens, DJI Mini 4 Pro drone, GoPro underwater housing…" placeholderTextColor="#718997" style={[styles.input, styles.bioInput]} textAlignVertical="top" value={equipmentSetup} />
+          <Text selectable style={styles.characterCount}>{equipmentSetup.length}/500</Text>
+
           <View style={styles.portfolioHeader}>
             <Text style={styles.label}>Portfolio links</Text>
             <Text selectable style={styles.linkLimit}>{portfolioLinks.length}/5</Text>
@@ -340,6 +354,7 @@ const styles = StyleSheet.create({
   input: { backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.15)", borderCurve: "continuous", borderRadius: 14, borderWidth: 1, color: "#ffffff", fontSize: 16, minHeight: 54, paddingHorizontal: 15 },
   bioInput: { minHeight: 120, paddingTop: 14 },
   characterCount: { color: "#698596", fontSize: 12, marginTop: 6, textAlign: "right" },
+  fieldHelp: { color: "#91a8b8", fontSize: 13, lineHeight: 19, marginBottom: 9 },
   portfolioHeader: { alignItems: "flex-end", flexDirection: "row", justifyContent: "space-between" },
   linkLimit: { color: "#698596", fontSize: 12, marginBottom: 9 },
   portfolioList: { gap: 10 },

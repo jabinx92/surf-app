@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import FeedbackPressable from "@/components/feedback-pressable";
 import * as Haptics from "expo-haptics";
+import { formatSessionDate, formatSessionTime } from "@/utils/session-time";
 import { router, useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -17,6 +18,7 @@ type CreatorRequest = {
   id: string;
   service_type: string;
   session_date: string;
+  session_start_time: string | null;
   session_hours: number;
   surf_spot: string;
   notes: string;
@@ -50,7 +52,7 @@ export default function CreatorRequestsScreen() {
       const { data, error } = await supabase
         .from("booking_requests")
         .select(
-          "id, service_type, session_date, session_hours, surf_spot, notes, contact_details, status",
+          "id, service_type, session_date, session_start_time, session_hours, surf_spot, notes, contact_details, status",
         )
         .eq("creator_profile_id", profile.id)
         .order("created_at", { ascending: false });
@@ -119,10 +121,9 @@ export default function CreatorRequestsScreen() {
             <View key={request.id} style={styles.card}>
               <Text style={styles.cardTitle}>
                 {request.service_type} · {request.session_hours}{" "}
-                {request.session_hours === 1 ? "hour" : "hours"} ·{" "}
-                {request.session_date}
+                {request.session_hours === 1 ? "hour" : "hours"}
               </Text>
-              <Text style={styles.spot}>{request.surf_spot}</Text>
+              <Text style={styles.spot}>{formatSessionDate(request.session_date)} at {formatSessionTime(request.session_start_time)} · {request.surf_spot}</Text>
               {request.notes ? (
                 <Text style={styles.notes}>{request.notes}</Text>
               ) : null}
