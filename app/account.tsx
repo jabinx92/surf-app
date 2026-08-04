@@ -4,6 +4,7 @@ import { router, useFocusEffect, useLocalSearchParams, type Href } from "expo-ro
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { disableBookingPushReminders, enableBookingPushReminders } from "@/utils/push-notifications";
 
 type CreatorStatus = "approved" | "pending" | "none";
 
@@ -21,6 +22,9 @@ export default function AccountScreen() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [creatorStatus, setCreatorStatus] = useState<CreatorStatus>("none");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [isUpdatingPush, setIsUpdatingPush] = useState(false);
+  const [pushMessage, setPushMessage] = useState("");
 
   const loadAccount = useCallback(async () => {
     setIsLoading(true);
@@ -31,15 +35,17 @@ export default function AccountScreen() {
       setDisplayName(metadata.display_name ?? data.user.email?.split("@")[0] ?? "WaveLens user");
       setAvatarUrl(metadata.avatar_url ?? null);
       setAvatarColor(metadata.avatar_color ?? defaultAvatarColor);
-      const [adminResult, creatorResult, applicationResult, notificationResult] = await Promise.all([
+      const [adminResult, creatorResult, applicationResult, notificationResult, pushResult] = await Promise.all([
         supabase.rpc("is_wavelens_admin"),
         supabase.from("creator_profiles").select("id").eq("owner_id", data.user.id).maybeSingle(),
         supabase.from("creator_applications").select("status").eq("applicant_id", data.user.id).maybeSingle(),
         supabase.from("user_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+        supabase.from("push_notification_devices").select("id").eq("enabled", true).limit(1),
       ]);
       setIsAdmin(Boolean(adminResult.data));
       setCreatorStatus(creatorResult.data ? "approved" : applicationResult.data?.status === "pending" ? "pending" : "none");
       setUnreadCount(notificationResult.error ? 0 : (notificationResult.count ?? 0));
+      setPushEnabled(Boolean(pushResult.data?.length));
     } else {
       setIsAdmin(false);
       setCreatorStatus("none");
@@ -47,6 +53,26 @@ export default function AccountScreen() {
     }
     setIsLoading(false);
   }, []);
+
+  async function togglePushReminders() {
+    setIsUpdatingPush(true);
+    setPushMessage("");
+    try {
+      if (pushEnabled) {
+        await disableBookingPushReminders();
+        setPushEnabled(false);
+        setPushMessage("Morning booking reminders are off.");
+      } else {
+        await enableBookingPushReminders();
+        setPushEnabled(true);
+        setPushMessage("Morning booking reminders are on for this phone.");
+      }
+    } catch (error) {
+      setPushMessage(error instanceof Error ? error.message : "Could not update push reminders.");
+    } finally {
+      setIsUpdatingPush(false);
+    }
+  }
 
   useFocusEffect(useCallback(() => { void loadAccount(); }, [loadAccount]));
 
@@ -133,6 +159,13 @@ export default function AccountScreen() {
               <ProfileAvatar color={avatarColor} imageUrl={avatarUrl} name={displayName} size={72} />
               <View style={styles.identityText}><Text style={styles.emailLabel}>SIGNED IN AS</Text><Text selectable style={styles.identityName}>{displayName}</Text><Text selectable style={styles.email}>{email}</Text></View>
             </View>
+            <View style={styles.reminderCard}>
+              <Text style={styles.reminderEyebrow}>FREE BOOKING ALERTS</Text>
+              <Text style={styles.reminderTitle}>Morning push reminders</Text>
+              <Text selectable style={styles.reminderText}>Get a phone alert at 7 AM on days when you have an accepted WaveLens session.</Text>
+              {pushMessage ? <Text accessibilityLiveRegion="polite" selectable style={styles.reminderStatus}>{pushMessage}</Text> : null}
+              <Pressable accessibilityRole="button" disabled={isUpdatingPush} onPress={() => void togglePushReminders()} style={[styles.reminderButton, pushEnabled && styles.reminderButtonOn, isUpdatingPush && styles.disabledButton]}><Text style={[styles.reminderButtonText, pushEnabled && styles.reminderButtonTextOn]}>{isUpdatingPush ? "Updating..." : pushEnabled ? "Turn off reminders" : "Enable free reminders"}</Text></Pressable>
+            </View>
             {creatorStatus === "approved" ? (
               <View accessibilityLabel="Creator application approved" style={styles.creatorStatusCard}>
                 <Text style={styles.creatorStatusBadge}>✓ APPROVED CREATOR</Text>
@@ -207,6 +240,15 @@ const styles = StyleSheet.create({
   identityName: { color: "#ffffff", fontSize: 18, fontWeight: "900", marginTop: 5 },
   emailLabel: { color: "#91a8b8", fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
   email: { color: "#91a8b8", fontSize: 13, marginTop: 3 },
+  reminderCard: { backgroundColor: "rgba(86,214,201,.07)", borderColor: "rgba(86,214,201,.22)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, padding: 17 },
+  reminderEyebrow: { color: "#7ce0d6", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
+  reminderTitle: { color: "#ffffff", fontSize: 18, fontWeight: "900", marginTop: 7 },
+  reminderText: { color: "#b9c9d6", fontSize: 14, lineHeight: 20, marginTop: 7 },
+  reminderStatus: { color: "#ffd4a3", fontSize: 13, lineHeight: 18, marginTop: 10 },
+  reminderButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 13, justifyContent: "center", marginTop: 14, minHeight: 46 },
+  reminderButtonOn: { backgroundColor: "transparent", borderColor: "rgba(255,255,255,.2)", borderWidth: 1 },
+  reminderButtonText: { color: "#061827", fontSize: 14, fontWeight: "900" },
+  reminderButtonTextOn: { color: "#ffffff" },
   reportConfirmation: { backgroundColor: "rgba(86,214,201,0.1)", borderColor: "rgba(86,214,201,0.3)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, gap: 6, padding: 17 },
   reportConfirmationTitle: { color: "#7ce0d6", fontSize: 16, fontWeight: "900" },
   reportConfirmationText: { color: "#d9e5ec", fontSize: 14, lineHeight: 20 },

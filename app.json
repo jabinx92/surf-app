@@ -62,6 +62,13 @@
         }
       ],
       "expo-secure-store"
+      ,[
+        "expo-notifications",
+        {
+          "color": "#56d6c9",
+          "defaultChannel": "booking-reminders"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

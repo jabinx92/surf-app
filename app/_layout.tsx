@@ -3,12 +3,14 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { router, Stack, type Href } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { StyleSheet, View } from "react-native";
+import { useEffect } from "react";
 
 
 export const unstable_settings = {
@@ -27,6 +29,18 @@ export default function RootLayout() {
       card: "#061827",
     },
   };
+
+  useEffect(() => {
+    if (process.env.EXPO_OS === "web") return;
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({ shouldPlaySound: true, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
+    });
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const url = response.notification.request.content.data.url;
+      if (typeof url === "string" && url.startsWith("/")) router.push(url as Href);
+    });
+    return () => subscription.remove();
+  }, []);
 
   return (
   <ThemeProvider value={navigationTheme}>

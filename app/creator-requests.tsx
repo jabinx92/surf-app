@@ -28,6 +28,8 @@ type CreatorRequest = {
 export default function CreatorRequestsScreen() {
   const [requests, setRequests] = useState<CreatorRequest[]>([]);
   const [message, setMessage] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const loadRequests = useCallback(async () => {
     setIsLoading(true);
@@ -77,20 +79,42 @@ export default function CreatorRequestsScreen() {
     id: string,
     status: "accepted" | "declined" | "completed",
   ) {
-    const { error } = await supabase
+    if (updatingId) return;
+    setUpdatingId(id);
+    setActionMessage("");
+    const { data, error } = await supabase
       .from("booking_requests")
       .update({ status })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id, status")
+      .single();
     if (error) {
+      const nextMessage = `Could not update request: ${error.message}`;
+      setActionMessage(nextMessage);
       Alert.alert("Could not update request", error.message);
+      setUpdatingId(null);
       return;
     }
+    setRequests((current) =>
+      current.map((request) =>
+        request.id === data.id
+          ? { ...request, status: data.status as CreatorRequest["status"] }
+          : request,
+      ),
+    );
+    setActionMessage(
+      status === "accepted"
+        ? "Booking accepted. The customer has been notified."
+        : status === "declined"
+          ? "Booking declined. The customer has been notified."
+          : "Booking marked complete. The customer has been notified.",
+    );
     if (process.env.EXPO_OS === "ios") {
       void Haptics.notificationAsync(
         status === "accepted" ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning,
       );
     }
-    void loadRequests();
+    setUpdatingId(null);
   }
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -103,6 +127,7 @@ export default function CreatorRequestsScreen() {
       <Text style={styles.subtitle}>
         Review requests, coordinate sessions, and mark delivered work complete.
       </Text>
+      {actionMessage ? <View accessibilityLiveRegion="polite" style={[styles.actionMessage, actionMessage.startsWith("Could not") && styles.actionError]}><Text selectable style={[styles.actionMessageText, actionMessage.startsWith("Could not") && styles.actionErrorText]}>{actionMessage}</Text></View> : null}
       {isLoading ? (
         <View style={styles.state}>
           <ActivityIndicator color="#56d6c9" />
@@ -133,20 +158,24 @@ export default function CreatorRequestsScreen() {
               {request.status === "pending" ? (
                 <View style={styles.actions}>
                   <FeedbackPressable
+                    accessibilityRole="button"
+                    disabled={updatingId === request.id}
                     haptic="none"
                     onPress={() => void updateRequest(request.id, "declined")}
                     style={styles.decline}
                     wrapperStyle={styles.actionButtonWrapper}
                   >
-                    <Text style={styles.declineText}>Decline</Text>
+                    <Text style={styles.declineText}>{updatingId === request.id ? "Updating..." : "Decline"}</Text>
                   </FeedbackPressable>
                   <FeedbackPressable
+                    accessibilityRole="button"
+                    disabled={updatingId === request.id}
                     haptic="none"
                     onPress={() => void updateRequest(request.id, "accepted")}
                     style={styles.accept}
                     wrapperStyle={styles.actionButtonWrapper}
                   >
-                    <Text style={styles.acceptText}>Accept</Text>
+                    <Text style={styles.acceptText}>{updatingId === request.id ? "Updating..." : "Accept"}</Text>
                   </FeedbackPressable>
                 </View>
               ) : (
@@ -220,6 +249,10 @@ const styles = StyleSheet.create({
   },
   title: { color: "#fff", fontSize: 38, fontWeight: "900", marginTop: 10 },
   subtitle: { color: "#b9c9d6", fontSize: 16, lineHeight: 23, marginTop: 10 },
+  actionMessage: { backgroundColor: "rgba(86,214,201,.1)", borderColor: "rgba(86,214,201,.3)", borderRadius: 14, borderWidth: 1, marginTop: 18, padding: 14 },
+  actionMessageText: { color: "#bff8f1", fontSize: 14, lineHeight: 20 },
+  actionError: { backgroundColor: "rgba(240,112,112,.1)", borderColor: "rgba(240,112,112,.3)" },
+  actionErrorText: { color: "#ffc0c0" },
   state: { alignItems: "center", paddingTop: 90 },
   stateText: { color: "#b9c9d6", fontSize: 16, textAlign: "center" },
   list: { gap: 13, marginTop: 28 },
