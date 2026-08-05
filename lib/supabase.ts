@@ -1,7 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { createClient, processLock } from "@supabase/supabase-js";
-import { AppState, Platform } from "react-native";
-import NodeWebSocket from "ws";
+import { AppState } from "react-native";
 import "react-native-url-polyfill/auto";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
@@ -15,24 +14,18 @@ const nativeSecureStorage = {
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    ...(Platform.OS !== "web" ? { storage: nativeSecureStorage } : {}),
+    storage: nativeSecureStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
     lock: processLock,
   },
-  realtime:
-    Platform.OS === "web" && typeof globalThis.WebSocket === "undefined"
-      ? { transport: NodeWebSocket as unknown as typeof globalThis.WebSocket }
-      : undefined,
 });
 
-if (Platform.OS !== "web") {
-  AppState.addEventListener("change", (state) => {
-    if (state === "active") {
-      supabase.auth.startAutoRefresh();
-    } else {
-      supabase.auth.stopAutoRefresh();
-    }
-  });
-}
+AppState.addEventListener("change", (state) => {
+  if (state === "active") {
+    supabase.auth.startAutoRefresh();
+  } else {
+    supabase.auth.stopAutoRefresh();
+  }
+});
