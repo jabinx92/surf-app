@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Alert, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AuthForm from "@/components/AuthForm";
@@ -52,9 +52,9 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.authScreen}>
         <StatusBar style="dark" />
         <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.authContent}>
-          <Pressable accessibilityRole="button" onPress={() => setShowAuth(false)} style={styles.backButton}>
-            <Text style={styles.backButtonText}>Back to WaveLens</Text>
-          </Pressable>
+          <FeedbackPressable accessibilityRole="button" haptic="none" onPress={() => setShowAuth(false)} style={styles.backButton}>
+            {({ hovered }) => <Text style={[styles.backButtonText, hovered && styles.backButtonTextHover]}>Back to WaveLens</Text>}
+          </FeedbackPressable>
           <View style={styles.authCard}>
             <Text style={styles.authEyebrow}>WELCOME BACK</Text>
             <Text style={styles.authTitle}>Your next session starts here.</Text>
@@ -74,27 +74,27 @@ export default function HomeScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.shell, isWide && styles.shellWide]}>
           <View style={styles.header}>
-            <Pressable accessibilityRole="button" onPress={() => router.push("/")} style={styles.brand}>
+            <FeedbackPressable accessibilityRole="button" haptic="none" onPress={() => router.push("/")} style={styles.brand}>
               <View style={styles.brandMark}><Text style={styles.brandMarkText}>W</Text></View>
               <Text style={styles.brandName}>WaveLens</Text>
-            </Pressable>
+            </FeedbackPressable>
             {isWide ? (
               <View style={styles.desktopNav}>
-                <Pressable accessibilityRole="link" onPress={() => router.push("/location")} style={styles.navLink}>
-                  <Text style={styles.navLinkText}>Explore spots</Text>
-                </Pressable>
-                <Pressable accessibilityRole="link" onPress={() => router.push("/creators")} style={styles.navLink}>
-                  <Text style={styles.navLinkText}>Find creators</Text>
-                </Pressable>
+                <FeedbackPressable accessibilityRole="link" haptic="none" onPress={() => router.push("/location")} style={styles.navLink}>
+                  {({ hovered }) => <Text style={[styles.navLinkText, hovered && styles.navLinkTextHover]}>Explore spots</Text>}
+                </FeedbackPressable>
+                <FeedbackPressable accessibilityRole="link" haptic="none" onPress={() => router.push("/creators")} style={styles.navLink}>
+                  {({ hovered }) => <Text style={[styles.navLinkText, hovered && styles.navLinkTextHover]}>Find creators</Text>}
+                </FeedbackPressable>
               </View>
             ) : null}
             <View style={styles.headerActions}>
-              <Pressable accessibilityRole="button" onPress={() => router.push("/become-a-creator")} style={styles.creatorLink}>
-                <Text style={styles.creatorLinkText}>For creators</Text>
-              </Pressable>
-              <Pressable accessibilityLabel="Open account" accessibilityRole="button" onPress={() => router.push("/account")} style={styles.accountButton}>
+              <FeedbackPressable accessibilityRole="button" haptic="none" onPress={() => router.push("/become-a-creator")} style={styles.creatorLink}>
+                {({ hovered }) => <Text style={[styles.creatorLinkText, hovered && styles.navLinkTextHover]}>For creators</Text>}
+              </FeedbackPressable>
+              <FeedbackPressable accessibilityLabel="Open account" accessibilityRole="button" haptic="none" onPress={() => router.push("/account")} style={({ hovered }) => [styles.accountButton, hovered && styles.accountButtonHover]}>
                 <Text style={styles.accountButtonText}>Account</Text>
-              </Pressable>
+              </FeedbackPressable>
             </View>
           </View>
 
@@ -104,13 +104,13 @@ export default function HomeScreen() {
               <Text style={[styles.headline, isWide && styles.headlineWide]}>The better way to remember your best sessions.</Text>
               <Text style={styles.description}>Book a photographer or videographer to capture your next surf session.</Text>
               <View style={styles.heroActions}>
-                <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.push("/location")} style={styles.primaryButton}>
+                <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.push("/location")} style={({ hovered }) => [styles.primaryButton, hovered && styles.primaryButtonHover]}>
                   <Text style={styles.primaryButtonText}>Find a creator</Text>
                   <Text style={styles.buttonArrow}>-&gt;</Text>
                 </FeedbackPressable>
-                <Pressable accessibilityRole="button" onPress={() => router.push("/become-a-creator")} style={styles.secondaryButton}>
-                  <Text style={styles.secondaryButtonText}>I shoot surf</Text>
-                </Pressable>
+                <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.push("/become-a-creator")} style={({ hovered }) => [styles.secondaryButton, hovered && styles.secondaryButtonHover]}>
+                  {({ hovered }) => <Text style={[styles.secondaryButtonText, hovered && styles.navLinkTextHover]}>I shoot surf</Text>}
+                </FeedbackPressable>
               </View>
               <Text style={styles.microcopy}>Built for surf sessions, not generic photo shoots.</Text>
             </View>
@@ -155,7 +155,7 @@ export default function HomeScreen() {
               accessibilityRole="button"
               haptic="light"
               onPress={() => void shareWaveLens()}
-              style={styles.shareButton}
+              style={({ hovered }) => [styles.shareButton, hovered && styles.shareButtonHover]}
             >
               <Text style={styles.shareButtonIcon}>↗</Text>
               <Text style={styles.shareButtonText}>Share WaveLens</Text>
@@ -164,7 +164,7 @@ export default function HomeScreen() {
 
           <View style={styles.bottomCallout}>
             <View><Text style={styles.bottomCalloutTitle}>Shoot the sessions people talk about.</Text><Text style={styles.bottomCalloutText}>Apply to join the WaveLens creator community.</Text></View>
-            <Pressable accessibilityRole="button" onPress={() => router.push("/become-a-creator")} style={styles.calloutButton}><Text style={styles.calloutButtonText}>Apply now</Text></Pressable>
+            <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.push("/become-a-creator")} style={({ hovered }) => [styles.calloutButton, hovered && styles.calloutButtonHover]}><Text style={styles.calloutButtonText}>Apply now</Text></FeedbackPressable>
           </View>
         </View>
       </ScrollView>
@@ -187,10 +187,12 @@ const styles = StyleSheet.create({
   desktopNav: { alignItems: "center", flexDirection: "row", gap: 8 },
   navLink: { borderCurve: "continuous", borderRadius: 12, justifyContent: "center", minHeight: 40, paddingHorizontal: 13 },
   navLinkText: { color: "#9fb5c4", fontSize: 13, fontWeight: "700" },
+  navLinkTextHover: { color: "#ffffff" },
   headerActions: { alignItems: "center", flexDirection: "row", gap: 16 },
   creatorLink: { minHeight: 42, justifyContent: "center" },
   creatorLinkText: { color: "#b9c9d6", fontSize: 14, fontWeight: "700" },
   accountButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.14)", borderCurve: "continuous", borderRadius: 14, borderWidth: 1, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 },
+  accountButtonHover: { backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.24)" },
   accountButtonText: { color: "#ffffff", fontSize: 13, fontWeight: "800" },
   heroLayout: { gap: 36, paddingBottom: 48, paddingTop: 58 },
   heroLayoutWide: { alignItems: "center", flexDirection: "row", gap: 72, minHeight: 620, paddingBottom: 82, paddingTop: 74 },
@@ -204,9 +206,11 @@ const styles = StyleSheet.create({
   description: { color: "#b9c9d6", fontSize: 17, lineHeight: 26, marginTop: 20, maxWidth: 500 },
   heroActions: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 30 },
   primaryButton: { alignItems: "center", backgroundColor: "#56d6c9", borderCurve: "continuous", borderRadius: 16, flexDirection: "row", gap: 15, justifyContent: "center", minHeight: 56, paddingHorizontal: 21 },
+  primaryButtonHover: { backgroundColor: "#72e2d7", boxShadow: "0 10px 24px rgba(86,214,201,0.22)" },
   primaryButtonText: { color: "#061827", fontSize: 16, fontWeight: "900" },
   buttonArrow: { color: "#061827", fontSize: 17, fontWeight: "900" },
   secondaryButton: { alignItems: "center", borderColor: "rgba(255,255,255,0.21)", borderCurve: "continuous", borderRadius: 16, borderWidth: 1, justifyContent: "center", minHeight: 56, paddingHorizontal: 20 },
+  secondaryButtonHover: { backgroundColor: "rgba(255,255,255,0.09)", borderColor: "rgba(255,255,255,0.34)" },
   secondaryButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "800" },
   buttonPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
   microcopy: { color: "#718b9b", fontSize: 12, marginTop: 18 },
@@ -243,6 +247,7 @@ const styles = StyleSheet.create({
   shareText: { color: "#9bb2c1", fontSize: 13, lineHeight: 19, marginTop: 6, textAlign: "center" },
   shareTextWide: { textAlign: "left" },
   shareButton: { alignItems: "center", backgroundColor: "#ffffff", borderCurve: "continuous", borderRadius: 15, flexDirection: "row", gap: 9, justifyContent: "center", minHeight: 50, paddingHorizontal: 18 },
+  shareButtonHover: { backgroundColor: "#eefcfa", boxShadow: "0 10px 22px rgba(0,0,0,0.14)" },
   shareButtonPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
   shareButtonIcon: { color: "#061827", fontSize: 17, fontWeight: "900" },
   shareButtonText: { color: "#061827", fontSize: 14, fontWeight: "900" },
@@ -250,11 +255,13 @@ const styles = StyleSheet.create({
   bottomCalloutTitle: { color: "#061827", fontSize: 21, fontWeight: "900", letterSpacing: -0.7 },
   bottomCalloutText: { color: "#174457", fontSize: 13, marginTop: 5 },
   calloutButton: { alignItems: "center", backgroundColor: "#061827", borderCurve: "continuous", borderRadius: 14, justifyContent: "center", minHeight: 46, paddingHorizontal: 17 },
+  calloutButtonHover: { backgroundColor: "#102f43", boxShadow: "0 8px 18px rgba(6,24,39,0.22)" },
   calloutButtonText: { color: "#ffffff", fontSize: 14, fontWeight: "800" },
   authScreen: { flex: 1, backgroundColor: "#eff5f7" },
   authContent: { alignSelf: "center", maxWidth: 520, minHeight: "100%", padding: 22, width: "100%" },
   backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
   backButtonText: { color: "#174457", fontSize: 15, fontWeight: "800" },
+  backButtonTextHover: { color: "#061827" },
   authCard: { backgroundColor: "#ffffff", borderColor: "#d9e5ec", borderCurve: "continuous", borderRadius: 24, borderWidth: 1, boxShadow: "0 12px 30px rgba(6, 24, 39, 0.09)", marginTop: 24, padding: 24 },
   authEyebrow: { color: "#167f78", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
   authTitle: { color: "#061827", fontSize: 29, fontWeight: "800", letterSpacing: -1, lineHeight: 35, marginBottom: 22, marginTop: 8 },

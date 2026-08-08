@@ -1,17 +1,15 @@
 import * as Haptics from "expo-haptics";
-import type { PropsWithChildren } from "react";
+import { useRef } from "react";
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 
 type HapticStyle = "light" | "selection" | "success" | "warning" | "none";
 
-type FeedbackPressableProps = PropsWithChildren<
-  Omit<PressableProps, "style"> & {
+type FeedbackPressableProps = Omit<PressableProps, "style"> & {
     haptic?: HapticStyle;
-    style?: StyleProp<ViewStyle>;
+    style?: PressableProps["style"];
     wrapperStyle?: StyleProp<ViewStyle>;
-  }
->;
+  };
 
 export default function FeedbackPressable({
   children,
@@ -20,11 +18,14 @@ export default function FeedbackPressable({
   onPress,
   onPressIn,
   onPressOut,
+  onHoverIn,
+  onHoverOut,
   style,
   wrapperStyle,
   ...props
 }: FeedbackPressableProps) {
   const reduceMotion = useReducedMotion();
+  const isHovered = useRef(false);
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -55,8 +56,22 @@ export default function FeedbackPressable({
           onPressIn?.(event);
         }}
         onPressOut={(event) => {
-          if (!reduceMotion) scale.value = withTiming(1, { duration: 120 });
+          if (!reduceMotion) scale.value = withTiming(isHovered.current ? 1.02 : 1, { duration: 140 });
           onPressOut?.(event);
+        }}
+        onHoverIn={(event) => {
+          isHovered.current = true;
+          if (!disabled && !reduceMotion && process.env.EXPO_OS === "web") {
+            scale.value = withTiming(1.02, { duration: 160 });
+          }
+          onHoverIn?.(event);
+        }}
+        onHoverOut={(event) => {
+          isHovered.current = false;
+          if (!reduceMotion && process.env.EXPO_OS === "web") {
+            scale.value = withTiming(1, { duration: 180 });
+          }
+          onHoverOut?.(event);
         }}
         style={style}
       >
