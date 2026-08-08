@@ -9,7 +9,7 @@
 - [x] Prepare correctly sized iPhone and iPad App Store screenshots.
 - [x] Configure the App Store Connect app ID for production submission.
 - [x] Make lint, TypeScript, Expo Doctor, Supabase smoke checks, and static web export pass.
-- [ ] Complete a password-reset email from a real inbox on the TestFlight build (Phase 4 device test).
+- [x] Complete a password-reset email from a real inbox on the TestFlight build (Phase 4 device test).
 
 Phase 3 is code-complete. The final password-reset link check requires the Phase 4 TestFlight build because it must prove that an email link opens the installed iPhone app.
 
@@ -23,18 +23,28 @@ Phase 3 is code-complete. The final password-reset link check requires the Phase
 - [x] Test a signed-in booking request and creator application with separate disposable accounts.
 - [x] Deploy the `delete-account` Supabase Edge Function and verify anonymous calls are rejected.
 - [x] Verify account deletion with disposable signed-in customer and creator accounts, including booking/profile cleanup and rejected sign-in afterward.
-- [ ] Verify all creator records shown to customers are real people who consented to be listed.
+- [x] Verify all creator records shown to customers are real people who consented to be listed.
 
 ## TestFlight acceptance checklist
 
-- [ ] Test sign up, sign in, sign out, and email confirmation on a physical iPhone.
-- [ ] Test account deletion from Account and verify the user can no longer sign in.
-- [ ] Test both manual surf-spot selection and foreground location permission flows.
-- [ ] Submit a request and confirm it appears only in the signed-in customer’s request history.
-- [ ] Approve at least one real creator with the SQL in `SUPABASE_SETUP.md`; test that their customer request appears in Creator dashboard and that accept/decline changes the customer's status.
-- [ ] Host the built-in `/privacy` page at a public HTTPS URL, then add that Privacy Policy URL and a real Support URL to App Store Connect.
-- [ ] Prepare 6.7-inch iPhone screenshots, app subtitle, description, keywords, and support contact.
-- [ ] Copy reviewed listing content from `APP_STORE_METADATA.md` into App Store Connect and replace its public URL placeholders.
+- [x] Test sign up, sign in, sign out, and email confirmation on a physical iPhone.
+- [x] Test account deletion from Account and verify the user can no longer sign in.
+- [x] Test both manual surf-spot selection and foreground location permission flows.
+- [x] Submit a request and confirm it appears only in the signed-in customer’s request history.
+- [x] Approve at least one real creator with the SQL in `SUPABASE_SETUP.md`; test that their customer request appears in Creator dashboard and that accept/decline changes the customer's status.
+- [x] Host `/privacy` and `/support` at public HTTPS URLs and add them to App Store Connect (both verified HTTP 200 on August 8, 2026).
+- [x] Prepare 6.7-inch iPhone screenshots, app subtitle, description, keywords, and support contact for the submitted version 1.0.
+- [x] Copy reviewed listing content from `APP_STORE_METADATA.md` into App Store Connect and replace its public URL placeholders.
+
+## Phase 4.5: launch readiness
+
+- [x] Preserve the build 11 code and document its TestFlight release notes.
+- [x] Reconcile TestFlight acceptance and App Store listing status with this checklist.
+- [x] Prepare tester instructions, launch announcements, creator outreach, and first-booking support procedures.
+- [x] Verify build 11 on a physical iPhone.
+- [ ] Recruit 3-5 consented creators who can reliably respond to requests.
+- [ ] Invite the first 10 surfers and personally support their first booking attempts.
+- [ ] Record the first completed, paid session and the user's feedback.
 
 ## Build and submit
 
@@ -43,4 +53,4 @@ npx eas-cli@latest build -p ios --profile preview
 npx eas-cli@latest build -p ios --profile production
 ```
 
-Use App Store Connect or `eas submit` only after the production build is reviewed and the listing metadata is complete. Do not submit a service that cannot reliably deliver booking requests to creators.
+Version 1.0 is currently with Apple. Build 11 is the verified follow-up TestFlight build. Do not replace or withdraw the submitted version while review is pending unless Apple identifies a blocking issue.

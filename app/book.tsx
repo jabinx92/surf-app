@@ -6,15 +6,17 @@ import { formatSessionDate, formatSessionTime } from "@/utils/session-time";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { FadeInUp, ReduceMotion } from "react-native-reanimated";
 import FeedbackPressable from "@/components/feedback-pressable";
 import * as Haptics from "expo-haptics";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const sessionLengths = [1, 2, 3, 4] as const;
 
 export default function BookingScreen() {
   const { creatorId, spot } = useLocalSearchParams<{ creatorId: string; spot?: string }>();
+  const insets = useSafeAreaInsets();
   const [creator, setCreator] = useState<Creator | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [serviceType, setServiceType] = useState<(typeof serviceOptions)[number]>("Photography");
@@ -123,9 +125,11 @@ export default function BookingScreen() {
   const estimatedTotal = creator.starting_rate * sessionHours;
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
+    <View style={styles.page}>
       <StatusBar style="light" />
-      <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
+      <View style={[styles.statusBarBackdrop, { height: insets.top }]} />
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled" onScrollBeginDrag={Keyboard.dismiss}>
+        <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
       <Text style={styles.eyebrow}>REQUEST A SESSION</Text>
       <Text style={styles.title}>Book {creator.display_name}</Text>
       <Text selectable style={styles.subtitle}>{hourlyRate(creator)} starting rate · {creator.city}</Text>
@@ -142,16 +146,19 @@ export default function BookingScreen() {
       <View style={styles.section}><Text style={styles.label}>SESSION LENGTH</Text><View style={styles.options}>{sessionLengths.map((hours) => <Pressable accessibilityLabel={`${hours} ${hours === 1 ? "hour" : "hours"}`} accessibilityRole="button" key={hours} onPress={() => setSessionHours(hours)} style={[styles.option, sessionHours === hours && styles.optionSelected]}><Text style={[styles.optionText, sessionHours === hours && styles.optionTextSelected]}>{hours} {hours === 1 ? "hour" : "hours"}</Text></Pressable>)}</View></View>
       <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>SESSION DATE</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? styles.fieldInvalid : undefined}><SessionDatePicker onChange={setSessionDate} value={sessionDate} /></View>{hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a date to continue.</Text> : null}</View>
       <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>START TIME</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? styles.fieldInvalid : undefined}><SessionTimePicker onChange={setSessionStartTime} value={sessionStartTime} /></View>{hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a start time to continue.</Text> : null}</View>
-      <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Conditions, meeting point, and anything else they should know." placeholderTextColor="#698596" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
-      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><Text style={styles.required}>REQUIRED</Text></View><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" value={contactDetails} style={[styles.input,hasAttemptedSubmit&&contactDetails.trim().length<2&&styles.fieldInvalid]} />{hasAttemptedSubmit&&contactDetails.trim().length<2?<Text accessibilityRole="alert" style={styles.inlineError}>Add an email, phone number, or Instagram handle.</Text>:null}</View>
+      <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Conditions, meeting point, and anything else they should know." placeholderTextColor="#698596" returnKeyType="done" submitBehavior="blurAndSubmit" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
+      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><Text style={styles.required}>REQUIRED</Text></View><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" returnKeyType="done" submitBehavior="blurAndSubmit" value={contactDetails} style={[styles.input,hasAttemptedSubmit&&contactDetails.trim().length<2&&styles.fieldInvalid]} />{hasAttemptedSubmit&&contactDetails.trim().length<2?<Text accessibilityRole="alert" style={styles.inlineError}>Add an email, phone number, or Instagram handle.</Text>:null}</View>
       {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text></View> : null}
       <FeedbackPressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} haptic="light" onPress={() => void submitRequest()} style={[styles.submitButton, isSubmitting && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></FeedbackPressable>
       <Text selectable style={styles.footnote}>WaveLens does not process payments. Confirm final scope and payment directly with the creator.</Text>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: { backgroundColor: "#061827", flex: 1 },
+  statusBarBackdrop: { backgroundColor: "#242a31" },
   screen: { alignSelf: "center", backgroundColor: "#061827", flexGrow: 1, maxWidth: 680, padding: 20, paddingBottom: 44, width: "100%" },
   centered: { alignItems: "center", backgroundColor: "#061827", flex: 1, gap: 16, justifyContent: "center" },
   backButton: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44, paddingRight: 24 },

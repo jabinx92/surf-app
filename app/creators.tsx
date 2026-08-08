@@ -5,7 +5,6 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CreatorsScreen() {
   const { spot } = useLocalSearchParams<{ spot?: string }>();
@@ -44,7 +43,7 @@ export default function CreatorsScreen() {
   useFocusEffect(useCallback(() => { void loadCreators(); }, [loadCreators]));
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       <StatusBar style="light" />
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, isWide && styles.contentWide]}>
         <View style={styles.topBar}>
@@ -72,7 +71,7 @@ export default function CreatorsScreen() {
           <View style={[styles.list, isWide && styles.listWide]}>{creators.map((creator) => <View key={creator.id} style={isWide ? styles.listItemWide : undefined}><CreatorCard creator={creator} spot={spot} /></View>)}</View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

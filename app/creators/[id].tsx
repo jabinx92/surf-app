@@ -4,10 +4,12 @@ import { supabase } from "@/lib/supabase";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 export default function CreatorProfileScreen() {
   const { id, spot } = useLocalSearchParams<{ id: string; spot?: string }>();
+  const { width } = useWindowDimensions();
+  const isWide = width >= 850;
   const [creator, setCreator] = useState<Creator | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [reviews, setReviews] = useState<{ id: string; rating: number; comment: string; created_at: string }[]>([]);
@@ -53,7 +55,7 @@ export default function CreatorProfileScreen() {
     : null;
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={[styles.screen, isWide && styles.screenWide]} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
       <StatusBar style="light" />
       <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
       <View style={styles.hero}><ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={176} /></View>
@@ -91,7 +93,8 @@ export default function CreatorProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#061827", minHeight: "100%", padding: 20, paddingBottom: 40 },
+  screen: { alignSelf: "center", backgroundColor: "#061827", maxWidth: 640, minHeight: "100%", padding: 20, paddingBottom: 40, width: "100%" },
+  screenWide: { maxWidth: 1160, paddingBottom: 64, paddingHorizontal: 40 },
   centered: { alignItems: "center", backgroundColor: "#061827", flex: 1, gap: 18, justifyContent: "center", padding: 24 },
   backButton: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44, paddingRight: 24 },
   backButtonText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },

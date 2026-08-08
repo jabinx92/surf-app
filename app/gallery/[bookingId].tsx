@@ -191,6 +191,7 @@ export default function DeliveryGalleryScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.screen}
+      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
     >
       <StatusBar style="light" />

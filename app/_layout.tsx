@@ -11,6 +11,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { StyleSheet, View } from "react-native";
 import { useEffect } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 export const unstable_settings = {
@@ -19,6 +20,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const baseTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
   const navigationTheme = {
@@ -60,16 +62,17 @@ export default function RootLayout() {
         <Stack.Screen name="creators/[id]" />
         <Stack.Screen name="book" />
         <Stack.Screen name="requests" />
+        <Stack.Screen name="session/[bookingId]" />
         <Stack.Screen name="become-a-creator" />
         <Stack.Screen name="creator-application-status" />
         <Stack.Screen name="creator-requests" />
-        <Stack.Screen name="availability" />
+        <Stack.Screen name="availability" options={{ contentStyle: { backgroundColor: "#061827", paddingTop: insets.top } }} />
         <Stack.Screen name="notifications" />
-        <Stack.Screen name="admin" />
+        <Stack.Screen name="admin" options={{ contentStyle: { backgroundColor: "#061827", paddingTop: insets.top } }} />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="forgot-password" />
         <Stack.Screen name="reset-password" />
-        <Stack.Screen name="messages/[bookingId]" />
+        <Stack.Screen name="messages/[bookingId]" options={{ contentStyle: { backgroundColor: "#061827", paddingTop: insets.top } }} />
         <Stack.Screen name="gallery/[bookingId]" />
         <Stack.Screen name="review/[bookingId]" />
         <Stack.Screen name="report" />
@@ -87,6 +90,7 @@ export default function RootLayout() {
         />
       </Stack>
 
+      <View pointerEvents="none" style={[styles.statusBarBackdrop, { height: insets.top }]} />
       <StatusBar style="light" />
     </View>
   </ThemeProvider>
@@ -97,5 +101,13 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#061827",
+  },
+  statusBarBackdrop: {
+    backgroundColor: "#242a31",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 100,
   },
 });

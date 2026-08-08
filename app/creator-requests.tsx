@@ -117,7 +117,7 @@ export default function CreatorRequestsScreen() {
     setUpdatingId(null);
   }
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <ScrollView contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic">
       <StatusBar style="light" />
       <Pressable onPress={() => router.back()} style={styles.back}>
         <Text style={styles.backText}>Back</Text>
@@ -144,11 +144,18 @@ export default function CreatorRequestsScreen() {
         <View style={styles.list}>
           {requests.map((request) => (
             <View key={request.id} style={styles.card}>
-              <Text style={styles.cardTitle}>
-                {request.service_type} · {request.session_hours}{" "}
-                {request.session_hours === 1 ? "hour" : "hours"}
-              </Text>
-              <Text style={styles.spot}>{formatSessionDate(request.session_date)} at {formatSessionTime(request.session_start_time)} · {request.surf_spot}</Text>
+              <Pressable
+                accessibilityHint="Opens this session's details and booking actions"
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: "/session/[bookingId]", params: { bookingId: request.id } })}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <Text style={styles.cardTitle}>
+                  {request.service_type} · {request.session_hours}{" "}
+                  {request.session_hours === 1 ? "hour" : "hours"}
+                </Text>
+                <Text style={styles.spot}>{formatSessionDate(request.session_date)} at {formatSessionTime(request.session_start_time)} · {request.surf_spot}</Text>
+              </Pressable>
               {request.notes ? (
                 <Text style={styles.notes}>{request.notes}</Text>
               ) : null}
@@ -182,6 +189,12 @@ export default function CreatorRequestsScreen() {
                 <Text style={styles.status}>{request.status}</Text>
               )}
               <View style={styles.tools}>
+                <Pressable
+                  onPress={() => router.push({ pathname: "/session/[bookingId]", params: { bookingId: request.id } })}
+                  style={styles.messageButton}
+                >
+                  <Text style={styles.messageText}>View session</Text>
+                </Pressable>
                 <Pressable
                   onPress={() =>
                     router.push({
@@ -264,6 +277,7 @@ const styles = StyleSheet.create({
     padding: 17,
   },
   cardTitle: { color: "#fff", fontSize: 18, fontWeight: "900" },
+  pressed: { opacity: 0.76 },
   spot: { color: "#7ce0d6", fontSize: 14, fontWeight: "800", marginTop: 8 },
   notes: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 9 },
   contact: { color: "#7ce0d6", fontSize: 14, fontWeight: "700", marginTop: 12 },

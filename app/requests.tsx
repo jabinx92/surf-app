@@ -115,7 +115,12 @@ export default function RequestsScreen() {
         <View style={styles.list}>
           {requests.map((request) => (
             <View key={request.id} style={styles.card}>
-              <View style={styles.cardHeader}>
+              <Pressable
+                accessibilityHint="Opens this session's details and booking actions"
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: "/session/[bookingId]", params: { bookingId: request.id } })}
+                style={({ pressed }) => [styles.cardHeader, pressed && styles.buttonPressed]}
+              >
                 <View style={styles.cardMain}>
                   <Text style={styles.creatorName}>
                     Booking with {request.creator_display_name ?? "creator unavailable"}
@@ -142,7 +147,7 @@ export default function RequestsScreen() {
                 >
                   <Text style={styles.statusText}>{request.status}</Text>
                 </View>
-              </View>
+              </Pressable>
               {reviewIsDue(request) ? (
                 <View style={styles.reminder}>
                   <Text style={styles.reminderEyebrow}>ONE QUICK FAVOR</Text>
@@ -167,6 +172,12 @@ export default function RequestsScreen() {
                 </View>
               ) : null}
               <View style={styles.actions}>
+                <Pressable
+                  onPress={() => router.push({ pathname: "/session/[bookingId]", params: { bookingId: request.id } })}
+                  style={styles.action}
+                >
+                  <Text style={styles.actionText}>View session</Text>
+                </Pressable>
                 <Pressable
                   onPress={() =>
                     router.push({

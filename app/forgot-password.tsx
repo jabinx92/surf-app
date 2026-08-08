@@ -57,6 +57,7 @@ export default function ForgotPasswordScreen() {
       <StatusBar style="light" />
       <ScrollView
         contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         <Pressable onPress={() => router.back()} style={styles.backButton}>

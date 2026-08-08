@@ -1,6 +1,6 @@
 # WaveLens App Store listing draft
 
-Use this as the starting point in App Store Connect after the real support email and public privacy-policy URL are ready. Keep all claims aligned with the current app.
+This is the reviewed source of truth for the submitted WaveLens listing. Keep all claims aligned with the current app.
 
 ## Core metadata
 
@@ -60,6 +60,6 @@ Before submission, provide Apple with two test accounts:
 
 Include the test-account credentials, a short explanation of the customer-to-creator flow, and any steps needed to reach approved creator profiles. Do not submit until the Supabase migrations are applied and at least two real creator profiles are listed.
 
-## Final items to replace
+## App Review credentials
 
-- test credentials with accounts that work in the submitted build
+Provide working customer and creator test credentials directly in App Store Connect review notes. Never commit passwords or reusable review credentials to this repository.

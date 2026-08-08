@@ -1,2 +1,22 @@
+[auth]
+site_url = "https://wavelens.expo.app"
+additional_redirect_urls = [
+  "wavelens://reset-password",
+  "https://wavelens.expo.app/reset-password",
+  "http://localhost:8081/reset-password",
+]
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[storage.vector]
+enabled = false
+
 [functions.delete-account]
 verify_jwt = true

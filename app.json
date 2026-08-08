@@ -4,6 +4,7 @@
     "slug": "wavelens",
     "description": "Book trusted surf photographers and videographers near your favorite breaks.",
     "version": "1.0.0",
+    "backgroundColor": "#061827",
     "orientation": "portrait",
     "icon": "./assets/images/wavelens-icon.png",
     "scheme": "wavelens",
