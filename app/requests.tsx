@@ -240,10 +240,13 @@ export default function RequestsScreen() {
 }
 const styles = StyleSheet.create({
   screen: {
+    alignSelf: "center",
     backgroundColor: "#061827",
     flexGrow: 1,
+    maxWidth: 680,
     padding: 20,
     paddingBottom: 44,
+    width: "100%",
   },
   back: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44 },
   backText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },
