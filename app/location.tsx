@@ -4,7 +4,7 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type NearbySurfSpot = {
@@ -84,7 +84,7 @@ export default function LocationScreen() {
             <Text style={styles.backButtonText}>&lt;- Back</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.push("/")} style={styles.brandLockup}>
-            <View style={styles.brandMark}><Text style={styles.brandMarkText}>W</Text></View>
+            <Image source={require("@/assets/images/wavelens-icon.png")} style={styles.brandMark} />
             <Text style={styles.brandName}>WaveLens</Text>
           </Pressable>
         </View>
@@ -157,8 +157,7 @@ const styles = StyleSheet.create({
   backButton: { justifyContent: "center", minHeight: 44, paddingRight: 24 },
   backButtonText: { color: "#d9e5ec", fontSize: 14, fontWeight: "700" },
   brandLockup: { alignItems: "center", flexDirection: "row", gap: 9, minHeight: 44 },
-  brandMark: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 11, height: 32, justifyContent: "center", width: 32 },
-  brandMarkText: { color: "#061827", fontSize: 16, fontWeight: "900" },
+  brandMark: { borderRadius: 11, height: 32, width: 32 },
   brandName: { color: "#ffffff", fontSize: 18, fontWeight: "800", letterSpacing: -0.5 },
   landingScroll: { flex: 1 },
   landing: { flexGrow: 1, gap: 32, justifyContent: "center", paddingBottom: 32, paddingTop: 24 },

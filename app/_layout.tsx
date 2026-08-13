@@ -3,12 +3,13 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { router, Stack, type Href } from "expo-router";
+import { router, Stack, type Href, usePathname } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import HomeBrandLink from "@/components/home-brand-link";
 import { StyleSheet, View } from "react-native";
 import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,6 +22,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const baseTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
   const navigationTheme = {
@@ -89,6 +91,10 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+
+      {pathname !== "/" && pathname !== "/explore" && pathname !== "/location" && pathname !== "/creators" && pathname !== "/become-a-creator" ? (
+        <HomeBrandLink top={insets.top + 14} />
+      ) : null}
 
       <View pointerEvents="none" style={[styles.statusBarBackdrop, { height: insets.top }]} />
       <StatusBar style="light" />

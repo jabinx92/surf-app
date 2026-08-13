@@ -1,7 +1,7 @@
 import { surfSpots } from "@/data/surf-spots";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ExploreScreen() {
@@ -15,7 +15,7 @@ export default function ExploreScreen() {
         <View style={[styles.shell, isWide && styles.shellWide]}>
           <View style={styles.header}>
             <Pressable accessibilityRole="button" onPress={() => router.push("/")} style={styles.brandLockup}>
-              <View style={styles.brandMark}><Text style={styles.brandMarkText}>W</Text></View>
+              <Image source={require("@/assets/images/wavelens-icon.png")} style={styles.brandMark} />
               <Text style={styles.brand}>WaveLens</Text>
             </Pressable>
             {isWide ? <Pressable accessibilityRole="link" onPress={() => router.push("/creators")} style={styles.creatorsLink}><Text style={styles.creatorsLinkText}>Find creators</Text></Pressable> : null}
@@ -58,8 +58,7 @@ const styles = StyleSheet.create({
   shellWide: { maxWidth: 1160, paddingHorizontal: 40 },
   header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 72 },
   brandLockup: { alignItems: "center", flexDirection: "row", gap: 10, minHeight: 44 },
-  brandMark: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 12, height: 34, justifyContent: "center", width: 34 },
-  brandMarkText: { color: "#061827", fontSize: 17, fontWeight: "900" },
+  brandMark: { borderRadius: 12, height: 34, width: 34 },
   brand: { color: "#ffffff", fontSize: 20, fontWeight: "900", letterSpacing: -0.6 },
   creatorsLink: { left: "50%", minHeight: 42, justifyContent: "center", position: "absolute", transform: [{ translateX: -44 }] },
   creatorsLinkText: { color: "#9fb5c4", fontSize: 13, fontWeight: "700" },

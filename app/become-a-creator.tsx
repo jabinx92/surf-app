@@ -204,7 +204,7 @@ export default function BecomeACreatorScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#061827", flexGrow: 1, padding: 20, paddingBottom: 48 },
+  screen: { alignSelf: "center", backgroundColor: "#061827", flexGrow: 1, maxWidth: 680, padding: 20, paddingBottom: 48, width: "100%" },
   backButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingRight: 24 },
   backButtonText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },
   eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.5, marginTop: 16 },

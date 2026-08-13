@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Alert, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Image, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AuthForm from "@/components/AuthForm";
@@ -75,7 +75,7 @@ export default function HomeScreen() {
         <View style={[styles.shell, isWide && styles.shellWide]}>
           <View style={styles.header}>
             <FeedbackPressable accessibilityRole="button" haptic="none" onPress={() => router.push("/")} style={styles.brand}>
-              <View style={styles.brandMark}><Text style={styles.brandMarkText}>W</Text></View>
+              <Image source={require("@/assets/images/wavelens-icon.png")} style={styles.brandMark} />
               <Text style={styles.brandName}>WaveLens</Text>
             </FeedbackPressable>
             {isWide ? (
@@ -181,8 +181,7 @@ const styles = StyleSheet.create({
   bottomGlow: { backgroundColor: "rgba(31,106,153,0.18)", borderRadius: 330, bottom: -340, height: 660, left: -310, pointerEvents: "none", position: "absolute", width: 660 },
   header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 72 },
   brand: { alignItems: "center", flexDirection: "row", gap: 10, minHeight: 44 },
-  brandMark: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 12, height: 34, justifyContent: "center", width: 34 },
-  brandMarkText: { color: "#061827", fontSize: 17, fontWeight: "900" },
+  brandMark: { borderRadius: 12, height: 34, width: 34 },
   brandName: { color: "#ffffff", fontSize: 20, fontWeight: "800", letterSpacing: -0.5 },
   desktopNav: { alignItems: "center", flexDirection: "row", gap: 8 },
   navLink: { borderCurve: "continuous", borderRadius: 12, justifyContent: "center", minHeight: 40, paddingHorizontal: 13 },
