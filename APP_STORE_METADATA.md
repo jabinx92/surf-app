@@ -36,7 +36,7 @@ With WaveLens, you can:
 
 Creators can review incoming requests and respond from their WaveLens dashboard.
 
-WaveLens does not process payments in the current version. Payment is arranged only after a creator accepts a request.
+After a creator accepts a request, surfers can pay securely through WaveLens. Payments and creator payouts are processed by Stripe.
 
 Users can permanently delete their account and associated booking data from the Account screen.
 

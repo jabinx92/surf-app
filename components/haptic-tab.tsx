@@ -1,8 +1,8 @@
-import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { PlatformPressable } from '@react-navigation/elements';
+import { PlatformPressable } from 'expo-router/react-navigation';
 import * as Haptics from 'expo-haptics';
 
-export function HapticTab(props: BottomTabBarButtonProps) {
+// React Navigation and PlatformPressable disagree on ColorValue typing in SDK 57.
+export function HapticTab(props: any) {
   return (
     <PlatformPressable
       {...props}

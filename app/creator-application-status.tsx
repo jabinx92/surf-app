@@ -63,9 +63,12 @@ export default function CreatorApplicationStatusScreen() {
   }, []);
 
   useEffect(() => {
-    void loadStatus(true);
+    const initialLoad = setTimeout(() => void loadStatus(true), 0);
     const timer = setInterval(() => void loadStatus(), 15000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(initialLoad);
+      clearInterval(timer);
+    };
   }, [loadStatus]);
 
   const content = application ? statusContent[application.status] : null;

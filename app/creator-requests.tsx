@@ -102,6 +102,12 @@ export default function CreatorRequestsScreen() {
           : request,
       ),
     );
+    if (status === "accepted") {
+      const { error: pushError } = await supabase.functions.invoke("send-booking-accepted-push", {
+        body: { bookingId: id },
+      });
+      if (pushError) console.warn("Could not send booking acceptance push", pushError.message);
+    }
     setActionMessage(
       status === "accepted"
         ? "Booking accepted. The customer has been notified."

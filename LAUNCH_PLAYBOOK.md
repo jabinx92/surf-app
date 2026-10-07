@@ -27,11 +27,11 @@ Downloads alone are not the success metric. A completed session is.
 - Current availability and preferred surf spots.
 - Successful Creator dashboard test request.
 - Agreement to respond within 12 hours, even when declining.
-- Understanding that WaveLens does not process payment in version 1.0.
+- Completion of Stripe payout onboarding before accepting paid bookings.
 
 ## Creator outreach message
 
-> Hey! I just launched WaveLens, an app that helps surfers find and request local photo, video, and drone coverage. I am inviting a small first group of creators near Bay Area breaks. There is no platform fee in version 1.0, and you control whether you accept each request. Would you be open to a short walkthrough and explicitly consenting to a public creator profile?
+> Hey! I just launched WaveLens, an app that helps surfers find and request local photo, video, and drone coverage. I am inviting a small first group of creators near Bay Area breaks. Payments and payouts are handled securely through Stripe, and you control whether you accept each request. Would you be open to a short walkthrough and explicitly consenting to a public creator profile?
 
 Do not list anyone who has not clearly agreed.
 
@@ -90,5 +90,5 @@ Keep personal contact details outside Git. Track only consent and operational st
 - Approved: release version 1.0 according to the selected release option, monitor support, and keep build 11 ready as the follow-up.
 - Metadata rejected: correct only the requested listing field; do not rebuild unless required.
 - Binary rejected: reproduce the review steps, fix only the blocker, verify on TestFlight, and submit a higher build number.
-- Payment question: WaveLens does not process payments; customers and creators arrange them independently after acceptance.
+- Payment question: accepted sessions are paid through Stripe PaymentSheet, and creator earnings are routed through Stripe Connect.
 - Creator question: public creators are reviewed, real, and consented to being listed.

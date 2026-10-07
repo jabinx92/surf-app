@@ -2,7 +2,7 @@ import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
-} from "@react-navigation/native";
+} from "expo-router/react-navigation";
 import { router, Stack, type Href, usePathname } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
@@ -13,6 +13,7 @@ import HomeBrandLink from "@/components/home-brand-link";
 import { StyleSheet, View } from "react-native";
 import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StripeProvider } from "../components/stripe-provider";
 
 
 export const unstable_settings = {
@@ -40,13 +41,14 @@ export default function RootLayout() {
       handleNotification: async () => ({ shouldPlaySound: true, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
     });
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const url = response.notification.request.content.data.url;
+      const url = response.notification.request.content.data?.url;
       if (typeof url === "string" && url.startsWith("/")) router.push(url as Href);
     });
     return () => subscription.remove();
   }, []);
 
   return (
+  <StripeProvider>
   <ThemeProvider value={navigationTheme}>
     <View style={styles.root}>
       <Stack
@@ -80,6 +82,7 @@ export default function RootLayout() {
         <Stack.Screen name="report" />
         <Stack.Screen name="account" />
         <Stack.Screen name="profile-settings" />
+        <Stack.Screen name="creator-payouts" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="support" />
 
@@ -100,6 +103,7 @@ export default function RootLayout() {
       <StatusBar style="light" />
     </View>
   </ThemeProvider>
+  </StripeProvider>
 );
 }
 

@@ -31,7 +31,7 @@ export default function PrivacyScreen() {
         WaveLens uses Supabase for account authentication and database storage. Your information is processed to operate the marketplace, secure accounts, and deliver booking requests.
       </Section>
       <Section title="Payments">
-        WaveLens does not process payments in the current version of the app. Any payment arrangement is made after a creator accepts a session.
+        Payments and creator payouts are processed by Stripe. WaveLens stores the amount, payment status, and Stripe transaction identifiers needed to operate the booking, but does not store full card or bank-account details.
       </Section>
       <Section title="Your choices">
         You can sign out or permanently delete your account and associated booking data in the Account screen. To request access to account information, contact WaveLens using the support address published on the App Store listing.

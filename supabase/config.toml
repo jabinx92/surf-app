@@ -20,3 +20,15 @@ enabled = false
 
 [functions.delete-account]
 verify_jwt = true
+
+[functions.create-stripe-connect-account]
+verify_jwt = true
+
+[functions.create-booking-payment]
+verify_jwt = true
+
+[functions.send-booking-accepted-push]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

@@ -9,6 +9,7 @@ dist/
 web-build/
 /dist-release-check/
 /dist-review-reminder-check/
+/dist-ios-payment-check/
 expo-env.d.ts
 
 # Native

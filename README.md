@@ -10,7 +10,7 @@ WaveLens is a mobile-first marketplace for surfers to find local photographers, 
 - Lets customers track request status and creators accept or decline requests
 - Lets prospective creators submit a profile for review
 
-WaveLens does not process payments in version 1. Payment and any final scope are arranged directly after a creator accepts a request.
+WaveLens uses Stripe PaymentSheet and Stripe Connect for accepted-session payments. Creators connect a payout account before accepting paid bookings, and WaveLens records payment state from signed Stripe webhooks.
 
 ## Run locally
 

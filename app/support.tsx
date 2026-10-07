@@ -9,9 +9,9 @@ export default function SupportScreen() {
       <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
       <Text style={styles.eyebrow}>WAVELENS SUPPORT</Text>
       <Text style={styles.title}>Help with your session.</Text>
-      <Text selectable style={styles.subtitle}>WaveLens connects surfers with approved local creators. Creators and surfers arrange final scope and payment directly after a request is accepted.</Text>
+      <Text selectable style={styles.subtitle}>WaveLens connects surfers with approved local creators and provides secure session payments through Stripe after a request is accepted.</Text>
       <SupportItem title="Booking requests">Choose your surf spot, date, session length, and contact preference before you send a request. The creator can accept or decline it from their dashboard.</SupportItem>
-      <SupportItem title="Payments">WaveLens does not process payments in this release. Agree on final coverage, delivery, and payment directly with the creator.</SupportItem>
+      <SupportItem title="Payments">Pay only through the secure checkout shown on an accepted booking. If a paid booking must be cancelled or refunded, contact WaveLens support before changing the session.</SupportItem>
       <SupportItem title="Creator profiles">Only creators approved by WaveLens appear in the public directory. Review a creator&apos;s portfolio, services, travel range, and starting hourly rate before requesting a session.</SupportItem>
       <SupportItem title="Privacy and account deletion">You can permanently delete your account and associated booking data from Account. Read the full privacy policy in the Account screen.</SupportItem>
       <View style={styles.note}>

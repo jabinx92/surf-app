@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutable. */
 import * as Haptics from "expo-haptics";
 import { useRef } from "react";
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";

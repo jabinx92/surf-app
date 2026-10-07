@@ -1,6 +1,6 @@
 # WaveLens App Store privacy answers
 
-Use this worksheet when completing **App Store Connect → App Privacy** for WaveLens version 1.0.0. It reflects the current app and Supabase schema as of August 1, 2026. Recheck it whenever data collection or third-party SDKs change.
+Use this worksheet when completing **App Store Connect → App Privacy** for the WaveLens payment release. It reflects the Stripe integration prepared on October 6, 2026. Recheck it whenever data collection or third-party SDKs change.
 
 ## Opening question
 
@@ -24,11 +24,12 @@ For every data type below:
 | User Content | Photos or Videos | Creator delivery media associated with a booking |
 | User Content | Other User Content | Booking notes, creator biographies, portfolio links, delivery notes, editing notes, reviews, and safety reports |
 | Identifiers | User ID | Supabase account IDs connect users to their bookings, profiles, messages, and media |
+| Financial Info | Payment Info | Stripe collects payment and payout details on WaveLens's behalf for payment processing and fraud prevention; WaveLens does not store full card or bank details |
+| Purchases | Purchase History | Booking amount, payment status, and Stripe transaction identifiers support bookings, refunds, customer support, and accounting |
 
 ## Do not select for the current version
 
 - **Precise Location / Coarse Location:** Foreground coordinates are used on the device to sort a bundled list of surf spots. The coordinates are not sent to WaveLens or stored in Supabase.
-- **Payment Info / Purchases:** WaveLens does not process payments or receive payment details.
 - **Device ID:** WaveLens does not use an advertising or device identifier.
 - **Usage Data / Diagnostics:** No analytics, advertising, crash-reporting, or performance-monitoring SDK is currently integrated.
 - **Tracking:** WaveLens does not combine app data with third-party data for advertising, share it with data brokers, or serve targeted ads.
@@ -41,7 +42,7 @@ For every data type below:
 
 ## Before publishing the answers
 
-- Confirm the submitted build has no newly added analytics, advertising, crash-reporting, or payment SDKs.
+- Confirm the submitted build contains Stripe and still has no newly added analytics, advertising, or crash-reporting SDKs.
 - If users can attach audio in a later version, add **Audio Data**.
 - If WaveLens begins sending device coordinates to a server, add the applicable location type.
 - If a support form is added inside the app, review whether **Customer Support** must also be selected.

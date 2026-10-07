@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Image, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,8 +19,14 @@ const shareMessage =
 
 export default function HomeScreen() {
   const [showAuth, setShowAuth] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const { width } = useWindowDimensions();
-  const isWide = width >= 820;
+  const isWide = hasHydrated && width >= 820;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setHasHydrated(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   async function shareWaveLens() {
     try {

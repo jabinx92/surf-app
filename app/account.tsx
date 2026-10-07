@@ -151,6 +151,7 @@ export default function AccountScreen() {
               <ActionCard description="Update your photo, bio, and portfolio links." isWide={isWide} onPress={() => router.push("/profile-settings")} title="Edit profile" />
               <ActionCard description="Review and manage incoming session requests." isWide={isWide} onPress={() => router.push("/creator-requests")} title="Creator dashboard" />
               <ActionCard description="Set the days and times you are available." isWide={isWide} onPress={() => router.push("/availability")} title="Availability" />
+              {creatorStatus === "approved" ? <ActionCard description="Connect Stripe and receive session earnings." isWide={isWide} onPress={() => router.push("/creator-payouts" as Href)} title="Payouts" /> : null}
               {isAdmin ? <ActionCard admin description="Review applications and safety reports." isWide={isWide} onPress={() => router.push("/admin")} title="Admin approvals" /> : null}
             </View>
           </View>
@@ -161,8 +162,8 @@ export default function AccountScreen() {
             </View>
             <View style={styles.reminderCard}>
               <Text style={styles.reminderEyebrow}>FREE BOOKING ALERTS</Text>
-              <Text style={styles.reminderTitle}>Morning push reminders</Text>
-              <Text selectable style={styles.reminderText}>Get a phone alert at 7 AM on days when you have an accepted WaveLens session.</Text>
+              <Text style={styles.reminderTitle}>Booking and payment alerts</Text>
+              <Text selectable style={styles.reminderText}>Get booking and payment alerts, plus appointment reminders the day before and the morning of each paid session.</Text>
               {pushMessage ? <Text accessibilityLiveRegion="polite" selectable style={styles.reminderStatus}>{pushMessage}</Text> : null}
               <Pressable accessibilityRole="button" disabled={isUpdatingPush} onPress={() => void togglePushReminders()} style={[styles.reminderButton, pushEnabled && styles.reminderButtonOn, isUpdatingPush && styles.disabledButton]}><Text style={[styles.reminderButtonText, pushEnabled && styles.reminderButtonTextOn]}>{isUpdatingPush ? "Updating..." : pushEnabled ? "Turn off reminders" : "Enable free reminders"}</Text></Pressable>
             </View>
