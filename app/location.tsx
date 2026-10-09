@@ -1,24 +1,31 @@
 import { surfSpots } from "@/data/surf-spots";
 import { getDistanceInMiles } from "@/utils/distance";
+import { findNearbySurfMapSpots, searchSurfMapSpots } from "@/utils/surf-map";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type NearbySurfSpot = {
-  id: number;
+  id: number | string;
   name: string;
   latitude: number;
   longitude: number;
-  distance: number;
+  distance?: number;
+  detail?: string;
 };
 
 export default function LocationScreen() {
   const [status, setStatus] = useState("Ready");
   const [nearbySurfSpots, setNearbySurfSpots] = useState<NearbySurfSpot[]>([]);
   const [isChoosingSpot, setIsChoosingSpot] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<NearbySurfSpot[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [usesSurfMap, setUsesSurfMap] = useState(false);
+  const hasRequestedLocation = useRef(false);
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
 
@@ -26,7 +33,45 @@ export default function LocationScreen() {
     router.push({ pathname: "/creators", params: { spot } });
   }
 
-  async function getCurrentLocation() {
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!isChoosingSpot || query.length < 2) {
+      const resetTimer = setTimeout(() => {
+        setSearchResults([]);
+        setIsSearching(false);
+      }, 0);
+      return () => clearTimeout(resetTimer);
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const result = await searchSurfMapSpots(query);
+        if (cancelled) return;
+        setSearchResults(result.spots.map((spot) => ({
+          id: `surfmap:${spot.id}`,
+          name: spot.name,
+          latitude: spot.lat,
+          longitude: spot.lng,
+          detail: [spot.region, spot.country].filter(Boolean).join(", "),
+        })));
+        setUsesSurfMap(true);
+      } catch {
+        if (cancelled) return;
+        const lowered = query.toLocaleLowerCase();
+        setSearchResults(surfSpots.filter((spot) => spot.name.toLocaleLowerCase().includes(lowered)));
+        setUsesSurfMap(false);
+      } finally {
+        if (!cancelled) setIsSearching(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isChoosingSpot, searchQuery]);
+
+  const getCurrentLocation = useCallback(async () => {
     try {
       setStatus("Requesting permission...");
       const { status: permissionStatus } = await Location.requestForegroundPermissionsAsync();
@@ -41,12 +86,27 @@ export default function LocationScreen() {
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const { latitude, longitude } = location.coords;
 
-      const sortedSurfSpots = surfSpots
-        .map((surfSpot) => ({
-          ...surfSpot,
-          distance: getDistanceInMiles(latitude, longitude, surfSpot.latitude, surfSpot.longitude),
-        }))
-        .sort((firstSpot, secondSpot) => firstSpot.distance - secondSpot.distance);
+      let sortedSurfSpots: NearbySurfSpot[];
+      try {
+        const result = await findNearbySurfMapSpots(latitude, longitude);
+        sortedSurfSpots = result.spots.map((spot) => ({
+          id: `surfmap:${spot.id}`,
+          name: spot.name,
+          latitude: spot.lat,
+          longitude: spot.lng,
+          distance: typeof spot.distanceKm === "number" ? spot.distanceKm * 0.621371 : undefined,
+          detail: [spot.region, spot.country].filter(Boolean).join(", "),
+        }));
+        setUsesSurfMap(true);
+      } catch {
+        sortedSurfSpots = surfSpots
+          .map((surfSpot) => ({
+            ...surfSpot,
+            distance: getDistanceInMiles(latitude, longitude, surfSpot.latitude, surfSpot.longitude),
+          }))
+          .sort((firstSpot, secondSpot) => (firstSpot.distance ?? 0) - (secondSpot.distance ?? 0));
+        setUsesSurfMap(false);
+      }
 
       setNearbySurfSpots(sortedSurfSpots);
       setStatus("Nearby surf spots found");
@@ -55,9 +115,16 @@ export default function LocationScreen() {
       setStatus("We could not get your location. Choose a surf spot instead.");
       setIsChoosingSpot(true);
     }
-  }
+  }, []);
 
-  const renderSpotCard = (surfSpot: NearbySurfSpot | (typeof surfSpots)[number]) => (
+  useEffect(() => {
+    if (hasRequestedLocation.current) return;
+    hasRequestedLocation.current = true;
+    const locationTimer = setTimeout(() => void getCurrentLocation(), 0);
+    return () => clearTimeout(locationTimer);
+  }, [getCurrentLocation]);
+
+  const renderSpotCard = (surfSpot: NearbySurfSpot) => (
     <Pressable
       key={surfSpot.id}
       accessibilityRole="button"
@@ -66,7 +133,7 @@ export default function LocationScreen() {
     >
       <View>
         <Text style={styles.surfSpotName}>{surfSpot.name}</Text>
-        {"distance" in surfSpot ? <Text style={styles.surfSpotDistance}>{surfSpot.distance.toFixed(1)} miles away</Text> : <Text style={styles.surfSpotDistance}>Browse local creators</Text>}
+        {typeof surfSpot.distance === "number" ? <Text style={styles.surfSpotDistance}>{surfSpot.distance.toFixed(1)} miles away{surfSpot.detail ? ` · ${surfSpot.detail}` : ""}</Text> : <Text style={styles.surfSpotDistance}>{surfSpot.detail || "Browse local creators"}</Text>}
       </View>
       <View style={styles.cardArrowCircle}><Text style={styles.cardArrow}>-&gt;</Text></View>
     </Pressable>
@@ -95,11 +162,17 @@ export default function LocationScreen() {
               <Text style={styles.eyebrow}>CHOOSE A BREAK</Text>
               <Text style={[styles.resultsPageTitle, isWide && styles.resultsPageTitleWide]}>Where are you surfing?</Text>
               <Text style={styles.resultsSubtitle}>Pick a surf spot to see photographers and videographers nearby.</Text>
+              <View style={styles.searchBox}>
+                <TextInput accessibilityLabel="Search surf spots" autoCapitalize="words" autoCorrect={false} onChangeText={setSearchQuery} placeholder="Try Lower Trestles or Steamer Lane" placeholderTextColor="#698596" returnKeyType="search" style={styles.searchInput} value={searchQuery} />
+                {isSearching ? <ActivityIndicator color="#56d6c9" size="small" /> : null}
+              </View>
               {status !== "Ready" ? <Text selectable style={styles.locationNotice}>{status}</Text> : null}
             </View>
             <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.results} contentContainerStyle={[styles.resultsContent, isWide && styles.resultsContentWide]} showsVerticalScrollIndicator={false}>
-              {surfSpots.map(renderSpotCard)}
+              {(searchQuery.trim().length >= 2 ? searchResults : surfSpots).map(renderSpotCard)}
+              {searchQuery.trim().length >= 2 && !isSearching && searchResults.length === 0 ? <Text style={styles.emptySearch}>No matching surf spots found. Try a nearby city or another spelling.</Text> : null}
             </ScrollView>
+            {usesSurfMap ? <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://surf-map.com/")}><Text style={styles.attribution}>Surf data by SurfMap</Text></Pressable> : null}
             <Pressable accessibilityRole="button" onPress={() => setIsChoosingSpot(false)} style={({ pressed }) => [styles.refreshButton, isWide && styles.refreshButtonWide, pressed && styles.buttonPressed]}>
               <Text style={styles.refreshButtonText}>Use my location instead</Text>
             </Pressable>
@@ -137,6 +210,7 @@ export default function LocationScreen() {
             <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.results} contentContainerStyle={[styles.resultsContent, isWide && styles.resultsContentWide]} showsVerticalScrollIndicator={false}>
               {nearbySurfSpots.map(renderSpotCard)}
             </ScrollView>
+            {usesSurfMap ? <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://surf-map.com/")}><Text style={styles.attribution}>Surf data by SurfMap</Text></Pressable> : null}
             <Pressable accessibilityRole="button" onPress={getCurrentLocation} style={({ pressed }) => [styles.refreshButton, isWide && styles.refreshButtonWide, pressed && styles.buttonPressed]}>
               <Text style={styles.refreshButtonText}>Refresh Location</Text>
             </Pressable>
@@ -190,6 +264,10 @@ const styles = StyleSheet.create({
   resultsPageTitleWide: { fontSize: 50, letterSpacing: -2.1, lineHeight: 55 },
   resultsSubtitle: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 10 },
   locationNotice: { backgroundColor: "rgba(86,214,201,0.1)", borderColor: "rgba(86,214,201,0.24)", borderRadius: 12, borderWidth: 1, color: "#d9e5ec", fontSize: 13, lineHeight: 19, marginTop: 16, paddingHorizontal: 14, paddingVertical: 11 },
+  searchBox: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.16)", borderRadius: 16, borderWidth: 1, flexDirection: "row", marginTop: 20, minHeight: 54, paddingHorizontal: 16 },
+  searchInput: { color: "#ffffff", flex: 1, fontSize: 16, minHeight: 52 },
+  emptySearch: { color: "#91a8b8", fontSize: 14, lineHeight: 21, paddingVertical: 24, textAlign: "center", width: "100%" },
+  attribution: { color: "#7ce0d6", fontSize: 12, marginBottom: 4, textAlign: "center", textDecorationLine: "underline" },
   results: { flex: 1 },
   resultsContent: { gap: 12, paddingBottom: 20 },
   resultsContentWide: { flexDirection: "row", flexWrap: "wrap" },

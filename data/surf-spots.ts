@@ -35,4 +35,16 @@ export const surfSpots = [
     latitude: 37.4945,
     longitude: -122.4963,
   },
+  {
+    id: 7,
+    name: "Steamer Lane",
+    latitude: 36.9519,
+    longitude: -122.0255,
+  },
+  {
+    id: 8,
+    name: "Lower Trestles",
+    latitude: 33.3813,
+    longitude: -117.5888,
+  },
 ];

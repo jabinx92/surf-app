@@ -43,7 +43,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "WaveLens uses the photo you choose as your profile picture.",
+          "photosPermission": "WaveLens uses the photos and videos you choose for your profile and creator portfolio.",
           "cameraPermission": false,
           "microphonePermission": false
         }

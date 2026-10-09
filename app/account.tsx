@@ -21,6 +21,7 @@ export default function AccountScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [creatorStatus, setCreatorStatus] = useState<CreatorStatus>("none");
+  const [creatorProfileId, setCreatorProfileId] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isUpdatingPush, setIsUpdatingPush] = useState(false);
@@ -43,12 +44,14 @@ export default function AccountScreen() {
         supabase.from("push_notification_devices").select("id").eq("enabled", true).limit(1),
       ]);
       setIsAdmin(Boolean(adminResult.data));
+      setCreatorProfileId(creatorResult.data?.id ?? "");
       setCreatorStatus(creatorResult.data ? "approved" : applicationResult.data?.status === "pending" ? "pending" : "none");
       setUnreadCount(notificationResult.error ? 0 : (notificationResult.count ?? 0));
       setPushEnabled(Boolean(pushResult.data?.length));
     } else {
       setIsAdmin(false);
       setCreatorStatus("none");
+      setCreatorProfileId("");
       setUnreadCount(0);
     }
     setIsLoading(false);
@@ -149,6 +152,7 @@ export default function AccountScreen() {
             <Text style={styles.sectionLabel}>CREATOR TOOLS</Text>
             <View style={[styles.actionGrid, isWide && styles.actionGridWide]}>
               <ActionCard description="Update your photo, bio, and portfolio links." isWide={isWide} onPress={() => router.push("/profile-settings")} title="Edit profile" />
+              {creatorProfileId ? <ActionCard description="Preview your profile and add featured photos or videos." isWide={isWide} onPress={() => router.push({ pathname: "/creators/[id]", params: { id: creatorProfileId } })} title="Public profile & media" /> : null}
               <ActionCard description="Review and manage incoming session requests." isWide={isWide} onPress={() => router.push("/creator-requests")} title="Creator dashboard" />
               <ActionCard description="Set the days and times you are available." isWide={isWide} onPress={() => router.push("/availability")} title="Availability" />
               {creatorStatus === "approved" ? <ActionCard description="Connect Stripe and receive session earnings." isWide={isWide} onPress={() => router.push("/creator-payouts" as Href)} title="Payouts" /> : null}

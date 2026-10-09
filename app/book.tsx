@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { SessionDatePicker } from "@/components/session-date-picker";
 import { SessionTimePicker } from "@/components/session-time-picker";
 import { formatSessionDate, formatSessionTime } from "@/utils/session-time";
+import { clearBookingDraft, loadBookingDraft, saveBookingDraft } from "@/utils/booking-draft";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useState } from "react";
@@ -29,6 +30,7 @@ export default function BookingScreen() {
   const [formMessage, setFormMessage] = useState("");
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [needsAuthentication, setNeedsAuthentication] = useState(false);
 
   const loadCreator = useCallback(async () => {
     setIsLoading(true);
@@ -40,9 +42,21 @@ export default function BookingScreen() {
       .maybeSingle();
     const nextCreator = error ? null : (data as Creator | null);
     setCreator(nextCreator);
-    if (nextCreator) setServiceType(nextCreator.services[0] ?? "Photography");
+    if (nextCreator) {
+      const draft = await loadBookingDraft(nextCreator.id);
+      if (draft && (!spot || draft.spot === spot)) {
+        setServiceType(draft.serviceType);
+        setSessionDate(draft.sessionDate);
+        setSessionStartTime(draft.sessionStartTime);
+        setSessionHours(draft.sessionHours);
+        setNotes(draft.notes);
+        setContactDetails(draft.contactDetails);
+      } else {
+        setServiceType(nextCreator.services[0] ?? "Photography");
+      }
+    }
     setIsLoading(false);
-  }, [creatorId]);
+  }, [creatorId, spot]);
 
   useFocusEffect(useCallback(() => { void loadCreator(); }, [loadCreator]));
 
@@ -50,6 +64,7 @@ export default function BookingScreen() {
     if (!creator) return;
     setHasAttemptedSubmit(true);
     setFormMessage("");
+    setNeedsAuthentication(false);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
       setFormMessage("Choose your session date from the calendar.");
       return;
@@ -71,6 +86,7 @@ export default function BookingScreen() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) {
         setFormMessage("Sign in or create an account before sending a booking request.");
+        setNeedsAuthentication(true);
         return;
       }
       const { error } = await supabase.from("booking_requests").insert({
@@ -86,6 +102,7 @@ export default function BookingScreen() {
         contact_details: contactDetails.trim(),
       });
       if (error) throw error;
+      await clearBookingDraft(creator.id);
       if (process.env.EXPO_OS === "ios") {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -95,6 +112,21 @@ export default function BookingScreen() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function continueToSignIn() {
+    if (!creator) return;
+    await saveBookingDraft({
+      contactDetails,
+      creatorId: creator.id,
+      notes,
+      serviceType,
+      sessionDate,
+      sessionHours,
+      sessionStartTime,
+      spot: spot?.trim() ?? "",
+    });
+    router.push({ pathname: "/sign-in", params: { returnTo: "book", creatorId: creator.id, ...(spot ? { spot } : {}) } });
   }
 
   if (isLoading) return <View style={styles.centered}><ActivityIndicator color="#56d6c9" /></View>;
@@ -148,7 +180,7 @@ export default function BookingScreen() {
       <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>START TIME</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? styles.fieldInvalid : undefined}><SessionTimePicker onChange={setSessionStartTime} value={sessionStartTime} /></View>{hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a start time to continue.</Text> : null}</View>
       <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Conditions, meeting point, and anything else they should know." placeholderTextColor="#698596" returnKeyType="done" submitBehavior="blurAndSubmit" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
       <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><Text style={styles.required}>REQUIRED</Text></View><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" returnKeyType="done" submitBehavior="blurAndSubmit" value={contactDetails} style={[styles.input,hasAttemptedSubmit&&contactDetails.trim().length<2&&styles.fieldInvalid]} />{hasAttemptedSubmit&&contactDetails.trim().length<2?<Text accessibilityRole="alert" style={styles.inlineError}>Add an email, phone number, or Instagram handle.</Text>:null}</View>
-      {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text></View> : null}
+      {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text>{needsAuthentication ? <Pressable accessibilityRole="button" onPress={() => void continueToSignIn()} style={styles.signInButton}><Text style={styles.signInButtonText}>Sign in with email</Text></Pressable> : null}</View> : null}
       <FeedbackPressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} haptic="light" onPress={() => void submitRequest()} style={[styles.submitButton, isSubmitting && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></FeedbackPressable>
       <Text selectable style={styles.footnote}>You will pay securely through WaveLens after the creator accepts your request.</Text>
       </ScrollView>
@@ -189,6 +221,8 @@ const styles = StyleSheet.create({
   notesInput: { minHeight: 130 },
   formMessage: { backgroundColor: "rgba(255,177,92,0.1)", borderColor: "rgba(255,177,92,0.32)", borderCurve: "continuous", borderRadius: 14, borderWidth: 1, marginTop: 22, padding: 14 },
   formMessageText: { color: "#ffd4a3", fontSize: 14, lineHeight: 20 },
+  signInButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 12, justifyContent: "center", marginTop: 12, minHeight: 46 },
+  signInButtonText: { color: "#061827", fontSize: 14, fontWeight: "900" },
   submitButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 18, justifyContent: "center", marginTop: 36, minHeight: 58 },
   submitText: { color: "#061827", fontSize: 16, fontWeight: "800" },
   footnote: { color: "#698596", fontSize: 12, lineHeight: 18, marginTop: 14, textAlign: "center" },

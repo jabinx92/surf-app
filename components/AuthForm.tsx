@@ -3,7 +3,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
@@ -13,7 +12,8 @@ import { isStrongPassword } from "@/utils/password";
 import { getRandomAvatarColor } from "@/utils/avatar";
 import { router } from "expo-router";
 import Animated, { FadeIn, FadeOut, LinearTransition, ReduceMotion } from "react-native-reanimated";
-import FeedbackPressable from "@/components/feedback-pressable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type AuthFormProps = {
   onAuthenticated?: () => void;
@@ -101,31 +101,32 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>WaveLens</Text>
+      <View style={styles.eyebrow}>
+        <Text style={styles.eyebrowText}>{mode === "signIn" ? "WELCOME BACK" : "JOIN WAVELENS"}</Text>
+      </View>
+      <Text style={styles.title}>{mode === "signIn" ? "Sign in to WaveLens" : "Create your account"}</Text>
       <Text style={styles.subtitle}>
         {mode === "signIn"
           ? "Sign in to manage your sessions and account."
           : "Create an account to book surf photographers and videographers."}
       </Text>
 
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <Text style={styles.label}>Email</Text>
+        <Input value={email} onChangeText={setEmail} placeholder="you@example.com" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />
+      </View>
 
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        autoCapitalize="none"
-        secureTextEntry
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>Password</Text>
+          {mode === "signIn" ? (
+            <Pressable accessibilityRole="link" onPress={() => router.push("/forgot-password")} disabled={loading}>
+              <Text style={styles.inlineLink}>Forgot password?</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        <Input value={password} onChangeText={setPassword} placeholder="Enter your password" autoCapitalize="none" secureTextEntry />
+      </View>
 
       {mode === "signUp" ? (
         <Animated.View entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)} exiting={FadeOut.duration(120).reduceMotion(ReduceMotion.System)} layout={LinearTransition.duration(180).reduceMotion(ReduceMotion.System)}>
@@ -144,13 +145,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
 
       {mode === "signIn" ? (
         <>
-          <FeedbackPressable accessibilityRole="button" haptic="light" onPress={signIn} disabled={loading} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>{loading ? "Please wait…" : "Sign in"}</Text>
-          </FeedbackPressable>
-
-          <Pressable accessibilityRole="link" onPress={() => router.push("/forgot-password")} disabled={loading} style={styles.forgotPasswordButton}>
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-          </Pressable>
+          <Button onPress={signIn} disabled={loading} loading={loading}>Sign in</Button>
 
           <View style={styles.accountPrompt}>
             <Text style={styles.accountPromptText}>New here?</Text>
@@ -161,9 +156,7 @@ export default function AuthForm({ onAuthenticated }: AuthFormProps) {
         </>
       ) : (
         <>
-          <FeedbackPressable accessibilityRole="button" haptic="light" onPress={signUp} disabled={loading} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>{loading ? "Creating account…" : "Create account"}</Text>
-          </FeedbackPressable>
+          <Button onPress={signUp} disabled={loading} loading={loading}>Create account</Button>
 
           <View style={styles.accountPrompt}>
             <Text style={styles.accountPromptText}>Already have an account?</Text>
@@ -187,56 +180,59 @@ function authErrorMessage(error: unknown) {
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    gap: 14,
+    gap: 18,
+  },
+  eyebrow: {
+    alignSelf: "flex-start",
+    backgroundColor: "#ccfbf1",
+    borderCurve: "continuous",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  eyebrowText: {
+    color: "#0f766e",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
   },
   title: {
-    fontSize: 34,
+    color: "#18181b",
+    fontSize: 30,
     fontWeight: "700",
+    letterSpacing: -0.6,
+    marginTop: -4,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#667085",
-    marginBottom: 12,
+    color: "#71717a",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 4,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#d0d5dd",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
+  field: { gap: 8 },
+  labelRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+  label: { color: "#27272a", fontSize: 14, fontWeight: "600" },
+  inlineLink: { color: "#0f766e", fontSize: 13, fontWeight: "600" },
   errorMessage: {
-    color: "#b42318",
+    backgroundColor: "#fef2f2",
+    borderColor: "#fecaca",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: "#b91c1c",
     fontSize: 14,
+    padding: 12,
   },
   successMessage: {
-    color: "#067647",
+    backgroundColor: "#f0fdf4",
+    borderColor: "#bbf7d0",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: "#15803d",
     fontSize: 14,
+    padding: 12,
   },
-  primaryButton: {
-    backgroundColor: "#111827",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  accountPrompt: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, justifyContent: "center", minHeight: 44 },
-  accountPromptText: { color: "#667085", fontSize: 15 },
+  accountPrompt: { alignItems: "center", borderTopColor: "#e4e4e7", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 5, justifyContent: "center", marginTop: 2, minHeight: 52, paddingTop: 14 },
+  accountPromptText: { color: "#71717a", fontSize: 14 },
   modeButton: { justifyContent: "center", minHeight: 44, paddingHorizontal: 2 },
-  modeButtonText: { color: "#167f78", fontSize: 15, fontWeight: "700" },
-  forgotPasswordButton: {
-    alignItems: "center",
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  forgotPasswordText: {
-    color: "#344054",
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  modeButtonText: { color: "#0f766e", fontSize: 14, fontWeight: "700" },
 });

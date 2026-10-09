@@ -1,9 +1,20 @@
 import AuthForm from "@/components/AuthForm";
-import { router } from "expo-router";
+import { Card } from "@/components/ui/card";
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 export default function SignInScreen() {
+  const { returnTo, creatorId, spot } = useLocalSearchParams<{ returnTo?: string; creatorId?: string; spot?: string }>();
+
+  function finishAuthentication() {
+    if (returnTo === "book" && creatorId) {
+      router.replace({ pathname: "/book", params: { creatorId, ...(spot ? { spot } : {}) } });
+      return;
+    }
+    router.replace("/account");
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -19,9 +30,9 @@ export default function SignInScreen() {
           <Text style={styles.backText}>Back</Text>
         </Pressable>
 
-        <View style={styles.card}>
-          <AuthForm onAuthenticated={() => router.replace("/account")} />
-        </View>
+        <Card style={styles.card}>
+          <AuthForm onAuthenticated={finishAuthentication} />
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -29,8 +40,8 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: "#061827", flex: 1 },
-  content: { alignSelf: "center", flexGrow: 1, maxWidth: 620, padding: 20, paddingBottom: 44, width: "100%" },
+  content: { alignSelf: "center", flexGrow: 1, justifyContent: "center", maxWidth: 540, padding: 20, paddingBottom: 64, width: "100%" },
   backButton: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44, paddingRight: 24 },
   backText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },
-  card: { backgroundColor: "#ffffff", borderCurve: "continuous", borderRadius: 24, marginTop: 48, padding: 24 },
+  card: { marginTop: 20 },
 });

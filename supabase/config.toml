@@ -30,5 +30,8 @@ verify_jwt = true
 [functions.send-booking-accepted-push]
 verify_jwt = true
 
+[functions.surf-map-spots]
+verify_jwt = false
+
 [functions.stripe-webhook]
 verify_jwt = false

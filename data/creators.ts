@@ -4,6 +4,7 @@ export type CreatorService = (typeof serviceOptions)[number];
 
 export type Creator = {
   id: string;
+  owner_id?: string;
   display_name: string;
   city: string;
   services: CreatorService[];
