@@ -37,6 +37,9 @@ const MAPPING = {
   'xmark': 'close',
   'calendar': 'calendar-today',
   'clock': 'schedule',
+  'trash.fill': 'delete',
+  'hand.wave.fill': 'waving-hand',
+  'info.circle': 'info-outline',
 } as const satisfies Record<string, MaterialIconName>;
 type IconSymbolName = keyof typeof MAPPING;
 

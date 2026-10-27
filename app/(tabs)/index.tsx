@@ -115,6 +115,17 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          <View style={styles.aboutSection}>
+            <Text style={styles.sectionTitle}>Why WaveLens</Text>
+            <Text style={styles.aboutText}>
+              Four years of surfing, and still no good photo of a single wave. Surf photographers are hard to find when you&apos;re not part of the local crew, so we built a way to find them.
+            </Text>
+            <FeedbackPressable accessibilityRole="link" haptic="none" onPress={() => router.push("/about")} style={styles.aboutLink}>
+              <Text style={styles.aboutLinkText}>Read the story</Text>
+              <IconSymbol color={theme.colors.accentText} name="arrow.right" size={16} />
+            </FeedbackPressable>
+          </View>
+
           <View style={[styles.creatorBand, isWide && styles.creatorBandWide]}>
             <View style={styles.creatorCopy}>
               <Text style={styles.creatorTitle}>You shoot surf?</Text>
@@ -131,6 +142,9 @@ export default function HomeScreen() {
               <Text style={styles.footerLinkText}>Share WaveLens</Text>
             </FeedbackPressable>
             <View style={styles.footerLinks}>
+              <FeedbackPressable accessibilityRole="link" haptic="none" onPress={() => router.push("/about")} style={styles.footerLink}>
+                <Text style={styles.footerLinkText}>About</Text>
+              </FeedbackPressable>
               <FeedbackPressable accessibilityRole="link" haptic="none" onPress={() => router.push("/privacy")} style={styles.footerLink}>
                 <Text style={styles.footerLinkText}>Privacy</Text>
               </FeedbackPressable>
@@ -179,6 +193,11 @@ function createStyles(theme: AppTheme) {
     stepCopy: { flex: 1 },
     stepTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
     stepText: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginTop: 3 },
+
+    aboutSection: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: 36, paddingTop: 32 },
+    aboutText: { color: colors.textMuted, fontSize: 16, lineHeight: 25, maxWidth: 620 },
+    aboutLink: { alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 6, marginTop: 8, minHeight: 44 },
+    aboutLinkText: { color: colors.accentText, fontSize: 15, fontWeight: "700" },
 
     creatorBand: { backgroundColor: colors.inverse, borderCurve: "continuous", borderRadius: radius.lg, gap: 18, marginTop: 44, padding: 24 },
     creatorBandWide: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", padding: 32 },

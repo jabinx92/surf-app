@@ -21,7 +21,7 @@ export const unstable_settings = {
 };
 
 // Screens that draw their own top bar, so the floating brand link would overlap it.
-const screensWithTopBar = ["/", "/explore", "/location", "/creators", "/become-a-creator", "/book"];
+const screensWithTopBar = ["/", "/explore", "/location", "/creators", "/become-a-creator", "/book", "/about"];
 
 export default function RootLayout() {
   return (
@@ -97,6 +97,7 @@ function RootNavigator() {
         <Stack.Screen name="creator-payouts" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="support" />
+        <Stack.Screen name="about" />
 
         <Stack.Screen
           name="modal"
