@@ -48,3 +48,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Local build output and scratch files
+dist-*/
+tmp/
