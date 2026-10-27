@@ -115,15 +115,23 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={styles.aboutSection}>
-            <Text style={styles.sectionTitle}>Why WaveLens</Text>
-            <Text style={styles.aboutText}>
-              Four years of surfing, and still no good photo of a single wave. Surf photographers are hard to find when you&apos;re not part of the local crew, so we built a way to find them.
-            </Text>
-            <FeedbackPressable accessibilityRole="link" haptic="none" onPress={() => router.push("/about")} style={styles.aboutLink}>
-              <Text style={styles.aboutLinkText}>Read the story</Text>
-              <IconSymbol color={theme.colors.accentText} name="arrow.right" size={16} />
-            </FeedbackPressable>
+          {/* Mirror of the hero: clip on the left, words on the right. Uses the other look's clip so the page never shows the same one twice. */}
+          <View style={[styles.hero, styles.aboutSection, isWide && styles.heroWide]}>
+            <HeroVideo accessibilityLabel="A surfer riding a wave, filmed by drone" key={`about-${theme.name}`} media={homeHeroMedia[theme.name === "navy" ? "sport" : "navy"]} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]}>
+              <View style={styles.photoCaption}>
+                <IconSymbol color="#ffffff" name="camera.fill" size={14} />
+                <Text style={styles.photoCaptionText}>Find the photographers who know your break</Text>
+              </View>
+            </HeroVideo>
+            <View style={[styles.heroCopy, isWide && styles.heroCopyWide]}>
+              <Text style={[styles.headline, isWide && styles.headlineWide]}>Why WaveLens.</Text>
+              <Text style={styles.description}>
+                Four years of surfing, and still no good photo of a single wave. Surf photographers are hard to find when you&apos;re not part of the local crew, so we built a way to find them.
+              </Text>
+              <View style={styles.heroActions}>
+                <AppButton arrow onPress={() => router.push("/about")} size="lg" variant="secondary">Read the story</AppButton>
+              </View>
+            </View>
           </View>
 
           <View style={[styles.creatorBand, isWide && styles.creatorBandWide]}>
@@ -194,10 +202,7 @@ function createStyles(theme: AppTheme) {
     stepTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
     stepText: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginTop: 3 },
 
-    aboutSection: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: 36, paddingTop: 32 },
-    aboutText: { color: colors.textMuted, fontSize: 16, lineHeight: 25, maxWidth: 620 },
-    aboutLink: { alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 6, marginTop: 8, minHeight: 44 },
-    aboutLinkText: { color: colors.accentText, fontSize: 15, fontWeight: "700" },
+    aboutSection: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: 40 },
 
     creatorBand: { backgroundColor: colors.inverse, borderCurve: "continuous", borderRadius: radius.lg, gap: 18, marginTop: 44, padding: 24 },
     creatorBandWide: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", padding: 32 },
