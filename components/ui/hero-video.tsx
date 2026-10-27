@@ -1,26 +1,31 @@
 import { useEventListener } from "expo";
 import { useFocusEffect } from "expo-router";
-import { useVideoPlayer, VideoView, type VideoSource } from "expo-video";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useCallback, useRef, type ReactNode } from "react";
-import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { useReducedMotion } from "react-native-reanimated";
 
+import { useFocusCrop } from "@/components/ui/focus-crop";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import type { HeroMedia } from "@/constants/media";
+
+// All our clips are exported at 16:9.
+const videoAspect = 16 / 9;
 
 type HeroVideoProps = {
-  video: VideoSource;
-  // Shown while the video loads, if it fails, and for people who turn off motion.
-  poster: number;
+  // The clip, plus a photo shown while it loads, if it fails, and for people who turn off motion.
+  media: HeroMedia;
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 };
 
 // A silent, looping background clip with a photo behind it.
-export function HeroVideo({ video, poster, accessibilityLabel, style, children }: HeroVideoProps) {
+export function HeroVideo({ media, accessibilityLabel, style, children }: HeroVideoProps) {
   const reduceMotion = useReducedMotion();
   const isFocused = useRef(true);
-  const player = useVideoPlayer(reduceMotion ? null : video, (player) => {
+  const crop = useFocusCrop(videoAspect, media.videoFocus);
+  const player = useVideoPlayer(reduceMotion ? null : media.video, (player) => {
     player.muted = true;
     player.loop = true;
     // Don't pause the music someone is already listening to.
@@ -46,16 +51,11 @@ export function HeroVideo({ video, poster, accessibilityLabel, style, children }
   );
 
   return (
-    <PhotoPlaceholder accessibilityLabel={accessibilityLabel} source={poster} style={style}>
+    <PhotoPlaceholder accessibilityLabel={accessibilityLabel} aspect={media.posterAspect} focus={media.posterFocus} source={media.poster} style={style}>
       {reduceMotion ? null : (
-        <VideoView
-          accessible={false}
-          contentFit="cover"
-          nativeControls={false}
-          player={player}
-          playsInline
-          style={StyleSheet.absoluteFill}
-        />
+        <View onLayout={crop.onLayout} pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <VideoView accessible={false} contentFit="fill" nativeControls={false} player={player} playsInline style={crop.style} />
+        </View>
       )}
       {children}
     </PhotoPlaceholder>

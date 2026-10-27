@@ -7,26 +7,16 @@ import FeedbackPressable from "@/components/feedback-pressable";
 import { AppButton } from "@/components/ui/app-button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { HeroVideo } from "@/components/ui/hero-video";
+import { homeHeroMedia } from "@/constants/media";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { TopBar } from "@/components/ui/top-bar";
 import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
 
 const steps = [
   { icon: "mappin", title: "Pick your break", text: "Tell us where you're paddling out." },
-  { icon: "camera.fill", title: "Choose a shooter", text: "See their work, gear, and hourly rate." },
+  { icon: "camera.fill", title: "Choose a photographer", text: "See their work, gear, and hourly rate." },
   { icon: "checkmark", title: "Send a request", text: "They accept, you surf, the shots come to you." },
 ] as const;
-
-// Free Pexels stock for now; swap for WaveLens creators' work once they give permission.
-const heroPhotos = {
-  navy: require("@/assets/images/surf-water-level.jpg"),
-  sport: require("@/assets/images/surf-trio-aerial.jpg"),
-};
-
-const heroVideos = {
-  navy: require("@/assets/videos/hero-navy.mp4"),
-  sport: require("@/assets/videos/hero-sport.mp4"),
-};
 
 const shareUrl = "https://wavelens.expo.app";
 const shareMessage =
@@ -91,16 +81,16 @@ export default function HomeScreen() {
 
           <View style={[styles.hero, isWide && styles.heroWide]}>
             <View style={[styles.heroCopy, isWide && styles.heroCopyWide]}>
-              <Text style={[styles.headline, isWide && styles.headlineWide]}>Get shot surfing your home break.</Text>
+              <Text style={[styles.headline, isWide && styles.headlineWide]}>Your home break, professionally captured.</Text>
               <Text style={styles.description}>
-                Book a local surf photographer or filmmaker for your next session. Pick a spot, pick a shooter, send a request.
+                Book a local surf photographer or videographer for your next session. Pick a spot, choose your photographer, and send a request.
               </Text>
               <View style={styles.heroActions}>
                 <AppButton arrow onPress={() => router.push("/location")} size="lg">Find a photographer</AppButton>
               </View>
             </View>
 
-            <HeroVideo accessibilityLabel="Surfers riding a wave" poster={heroPhotos[theme.name]} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]} key={theme.name} video={heroVideos[theme.name]}>
+            <HeroVideo accessibilityLabel="Surfers riding a wave" key={theme.name} media={homeHeroMedia[theme.name]} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]}>
               <View style={styles.photoCaption}>
                 <IconSymbol color="#ffffff" name="camera.fill" size={14} />
                 <Text style={styles.photoCaptionText}>Photo, video, and drone, delivered to your phone</Text>

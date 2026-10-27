@@ -67,8 +67,8 @@ export default function CreatorsScreen() {
               <Text style={styles.spotText}>{spot}</Text>
             </View>
           ) : null}
-          <Text style={[styles.title, isWide && styles.titleWide]}>Who&apos;s shooting</Text>
-          <Text style={styles.subtitle}>Photographers, filmmakers, and drone pilots you can book for a session.</Text>
+          <Text style={[styles.title, isWide && styles.titleWide]}>Local photographers</Text>
+          <Text style={styles.subtitle}>Photographers, videographers, and drone pilots you can book for a session.</Text>
         </View>
 
         {isLoading ? (

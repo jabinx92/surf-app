@@ -11,6 +11,7 @@ import FeedbackPressable from "@/components/feedback-pressable";
 import { AppButton } from "@/components/ui/app-button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { HeroVideo } from "@/components/ui/hero-video";
+import { spotPickerMedia } from "@/constants/media";
 import { TopBar } from "@/components/ui/top-bar";
 import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
 
@@ -186,7 +187,7 @@ export default function LocationScreen() {
           </View>
         ) : nearbySurfSpots.length === 0 ? (
           <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} style={styles.flex} contentContainerStyle={[styles.intro, isWide && styles.introWide]}>
-            <HeroVideo accessibilityLabel="A surfer holding a board at sunset" poster={require("@/assets/images/surf-paddle-aerial.jpg")} style={[styles.introPhoto, isWide && styles.introPhotoWide]} video={require("@/assets/videos/golden-hour.mp4")} />
+            <HeroVideo accessibilityLabel="A surfer holding a board at sunset" media={spotPickerMedia} style={[styles.introPhoto, isWide && styles.introPhotoWide]} />
             <View style={[styles.introMain, isWide && styles.introMainWide]}>
             <View style={styles.introCopy}>
               <Text style={[styles.title, isWide && styles.titleWide]}>Where are you surfing?</Text>
