@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
+
 type SessionDatePickerProps = {
   onChange: (date: string) => void;
   value: string;
@@ -21,6 +24,8 @@ function parseDateValue(value: string) {
 }
 
 export function SessionDatePicker({ onChange, value }: SessionDatePickerProps) {
+  const theme = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const selectedDate = parseDateValue(value);
@@ -62,20 +67,20 @@ export function SessionDatePicker({ onChange, value }: SessionDatePickerProps) {
       >
         <View>
           <Text style={[styles.dateValue, !selectedDate && styles.placeholder]}>{displayValue}</Text>
-          {selectedDate ? <Text style={styles.storedDate}>{value}</Text> : null}
+
         </View>
-        <Text style={styles.calendarIcon}>CAL</Text>
+        <IconSymbol color={theme.colors.textMuted} name="calendar" size={20} />
       </Pressable>
 
       {isOpen ? (
         <View style={styles.calendar}>
           <View style={styles.monthHeader}>
             <Pressable accessibilityLabel="Previous month" accessibilityRole="button" disabled={isCurrentMonth} onPress={() => changeMonth(-1)} style={[styles.monthButton, isCurrentMonth && styles.monthButtonDisabled]}>
-              <Text style={styles.monthButtonText}>&lt;</Text>
+              <IconSymbol color={theme.colors.text} name="chevron.left" size={22} />
             </Pressable>
             <Text accessibilityRole="header" style={styles.monthTitle}>{visibleMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</Text>
             <Pressable accessibilityLabel="Next month" accessibilityRole="button" onPress={() => changeMonth(1)} style={styles.monthButton}>
-              <Text style={styles.monthButtonText}>&gt;</Text>
+              <IconSymbol color={theme.colors.text} name="chevron.right" size={22} />
             </Pressable>
           </View>
 
@@ -109,25 +114,25 @@ export function SessionDatePicker({ onChange, value }: SessionDatePickerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  dateButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.14)", borderCurve: "continuous", borderRadius: 16, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 58, paddingHorizontal: 16, paddingVertical: 11 },
-  pressed: { opacity: 0.8 },
-  dateValue: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
-  placeholder: { color: "#91a8b8", fontWeight: "500" },
-  storedDate: { color: "#698596", fontSize: 11, marginTop: 3 },
-  calendarIcon: { color: "#56d6c9", fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
-  calendar: { backgroundColor: "#102a39", borderColor: "rgba(255,255,255,0.14)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, marginTop: 10, padding: 14 },
-  monthHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
-  monthButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 12, height: 38, justifyContent: "center", width: 38 },
-  monthButtonDisabled: { opacity: 0.3 },
-  monthButtonText: { color: "#ffffff", fontSize: 18, fontWeight: "800" },
-  monthTitle: { color: "#ffffff", fontSize: 16, fontWeight: "800" },
-  weekRow: { flexDirection: "row" },
-  weekday: { color: "#698596", fontSize: 11, fontWeight: "900", paddingBottom: 8, textAlign: "center", width: "14.2857%" },
-  daysGrid: { flexDirection: "row", flexWrap: "wrap" },
-  dayCell: { alignItems: "center", aspectRatio: 1, borderRadius: 999, justifyContent: "center", width: "14.2857%" },
-  daySelected: { backgroundColor: "#56d6c9" },
-  dayText: { color: "#d9e5ec", fontSize: 14, fontVariant: ["tabular-nums"], fontWeight: "700" },
-  dayPast: { color: "#486373" },
-  daySelectedText: { color: "#061827", fontWeight: "900" },
-});
+function createStyles(theme: AppTheme) {
+  const { colors, radius } = theme;
+  return StyleSheet.create({
+    dateButton: { alignItems: "center", backgroundColor: colors.surface, borderColor: colors.border, borderCurve: "continuous", borderRadius: radius.md, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 54, paddingHorizontal: 16, paddingVertical: 11 },
+    pressed: { opacity: 0.8 },
+    dateValue: { color: colors.text, fontSize: 16, fontWeight: "600" },
+    placeholder: { color: colors.textFaint, fontWeight: "500" },
+    calendar: { backgroundColor: colors.surface, borderColor: colors.border, borderCurve: "continuous", borderRadius: radius.lg, borderWidth: 1, marginTop: 8, padding: 14 },
+    monthHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
+    monthButton: { alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: radius.sm, height: 38, justifyContent: "center", width: 38 },
+    monthButtonDisabled: { opacity: 0.3 },
+    monthTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
+    weekRow: { flexDirection: "row" },
+    weekday: { color: colors.textFaint, fontSize: 12, fontWeight: "700", paddingBottom: 8, textAlign: "center", width: "14.2857%" },
+    daysGrid: { flexDirection: "row", flexWrap: "wrap" },
+    dayCell: { alignItems: "center", aspectRatio: 1, borderRadius: theme.name === "sport" ? radius.sm : 999, justifyContent: "center", width: "14.2857%" },
+    daySelected: { backgroundColor: colors.accent },
+    dayText: { color: colors.text, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "600" },
+    dayPast: { color: colors.textFaint, opacity: 0.5 },
+    daySelectedText: { color: colors.onAccent, fontWeight: "800" },
+  });
+}

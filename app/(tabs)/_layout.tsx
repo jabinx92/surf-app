@@ -3,20 +3,23 @@ import React from "react";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useAppTheme } from "@/lib/app-theme";
 
 export default function TabLayout() {
+  const theme = useAppTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
         sceneStyle: {
-          backgroundColor: "#061827",
+          backgroundColor: theme.colors.background,
         },
         tabBarStyle: {
           display: "none",
-          backgroundColor: "#061827",
-          borderTopColor: "#061827",
+          backgroundColor: theme.colors.background,
+          borderTopColor: theme.colors.background,
         },
       }}
     >

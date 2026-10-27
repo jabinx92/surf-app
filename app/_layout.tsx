@@ -8,8 +8,8 @@ import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import HomeBrandLink from "@/components/home-brand-link";
+import { AppThemeProvider, useAppTheme } from "@/lib/app-theme";
 import { StyleSheet, View } from "react-native";
 import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,18 +20,31 @@ export const unstable_settings = {
   anchor: "(tabs)",
 };
 
+// Screens that draw their own top bar, so the floating brand link would overlap it.
+const screensWithTopBar = ["/", "/explore", "/location", "/creators", "/become-a-creator", "/book"];
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  return (
+    <StripeProvider>
+      <AppThemeProvider>
+        <RootNavigator />
+      </AppThemeProvider>
+    </StripeProvider>
+  );
+}
+
+function RootNavigator() {
+  const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const baseTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+  const baseTheme = theme.statusBar === "light" ? DarkTheme : DefaultTheme;
 
   const navigationTheme = {
     ...baseTheme,
     colors: {
       ...baseTheme.colors,
-      background: "#061827",
-      card: "#061827",
+      background: theme.colors.background,
+      card: theme.colors.background,
     },
   };
 
@@ -48,14 +61,13 @@ export default function RootLayout() {
   }, []);
 
   return (
-  <StripeProvider>
   <ThemeProvider value={navigationTheme}>
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: {
-            backgroundColor: "#061827",
+            backgroundColor: theme.colors.background,
           },
           animation: "slide_from_right",
         }}
@@ -95,25 +107,22 @@ export default function RootLayout() {
         />
       </Stack>
 
-      {pathname !== "/" && pathname !== "/explore" && pathname !== "/location" && pathname !== "/creators" && pathname !== "/become-a-creator" ? (
+      {!screensWithTopBar.includes(pathname) && !pathname.startsWith("/creators/") ? (
         <HomeBrandLink top={insets.top + 14} />
       ) : null}
 
-      <View pointerEvents="none" style={[styles.statusBarBackdrop, { height: insets.top }]} />
-      <StatusBar style="light" />
+      <View pointerEvents="none" style={[styles.statusBarBackdrop, { backgroundColor: theme.colors.background, height: insets.top }]} />
+      <StatusBar style={theme.statusBar} />
     </View>
   </ThemeProvider>
-  </StripeProvider>
 );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#061827",
   },
   statusBarBackdrop: {
-    backgroundColor: "#242a31",
     left: 0,
     position: "absolute",
     right: 0,

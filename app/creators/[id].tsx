@@ -3,7 +3,12 @@ import ProfileAvatar from "@/components/profile-avatar";
 import { supabase } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppButton } from "@/components/ui/app-button";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { TopBar } from "@/components/ui/top-bar";
+import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
@@ -17,6 +22,9 @@ type PortfolioMedia = {
 };
 
 export default function CreatorProfileScreen() {
+  const theme = useAppTheme();
+  const styles = useThemedStyles(createStyles);
+  const insets = useSafeAreaInsets();
   const { id, spot } = useLocalSearchParams<{ id: string; spot?: string }>();
   const { width } = useWindowDimensions();
   const isWide = width >= 850;
@@ -118,116 +126,164 @@ export default function CreatorProfileScreen() {
     setPortfolioMedia((current) => current.filter((item) => item.id !== media.id));
   }
 
+
   if (isLoading) {
-    return <View style={styles.centered}><ActivityIndicator color="#56d6c9" /></View>;
+    return <View style={styles.centered}><ActivityIndicator color={theme.colors.accent} /></View>;
   }
   if (!creator) {
-    return <View style={styles.centered}><Text style={styles.title}>Creator not found</Text><Pressable accessibilityRole="button" onPress={() => router.back()}><Text style={styles.backButtonText}>Go back</Text></Pressable></View>;
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.notFound}>Creator not found</Text>
+        <AppButton onPress={() => router.back()} variant="secondary">Go back</AppButton>
+      </View>
+    );
   }
 
   const portfolioLinks = creator.portfolio_urls?.length ? creator.portfolio_urls : [creator.portfolio_url];
   const averageRating = reviews.length
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : null;
+  const heroImage = portfolioMedia.find((media) => media.media_type === "image")?.public_url;
 
   return (
-    <ScrollView contentContainerStyle={[styles.screen, isWide && styles.screenWide]} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-      <StatusBar style="light" />
-      <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
-      <View style={styles.hero}><ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={176} /></View>
-      <View style={styles.content}>
-        <Text style={styles.eyebrow}>{creatorTitle(creator.services).toUpperCase()}</Text>
-        <View style={styles.nameRow}><Text style={styles.title}>{creator.display_name}</Text>{creator.is_verified ? <View style={styles.verified}><Text style={styles.verifiedText}>✓ VERIFIED CREATOR</Text></View> : null}</View>
-        <Text style={styles.meta}>{creator.city} - travels up to {creator.travel_miles} miles</Text>
-        <View style={styles.ratingSummary}>
-          <Text style={styles.ratingStar}>★</Text>
-          <Text style={styles.ratingValue}>{averageRating ? averageRating.toFixed(1) : "New"}</Text>
-          <Text style={styles.ratingCount}>{reviews.length ? `${reviews.length} verified ${reviews.length === 1 ? "review" : "reviews"}` : "No reviews yet"}</Text>
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>
+      <ScrollView contentContainerStyle={[styles.content, isWide && styles.contentWide]} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
+        <TopBar back />
+        <PhotoPlaceholder accessibilityLabel={`Surf photo by ${creator.display_name}`} source={heroImage} style={[styles.hero, isWide && styles.heroWide]} />
+        <View style={styles.avatar}>
+          <ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={88} />
         </View>
-        <Text style={styles.description}>{creator.bio || "Surf sessions captured with a local eye and a focus on the moments that matter."}</Text>
-        <View style={styles.services}>{creator.services.map((service) => <View key={service} style={styles.serviceBadge}><Text style={styles.serviceText}>{service}</Text></View>)}</View>
-        {(portfolioMedia.length > 0 || isOwner) ? <View style={styles.mediaSection}><View style={styles.mediaHeadingRow}><Text style={styles.mediaHeading}>FEATURED WORK</Text>{isOwner ? <Text style={styles.mediaHelp}>{isUploadingMedia ? "Uploading…" : `${portfolioMedia.length}/6 added`}</Text> : null}</View><View style={styles.mediaGrid}>{Array.from({ length: isOwner ? 6 : portfolioMedia.length }, (_, position) => { const media = portfolioMedia.find((item) => item.position === position); return media ? <Pressable accessibilityLabel={media.media_type === "video" ? "Open portfolio video" : "Open portfolio image"} accessibilityRole="button" key={media.id} onPress={() => void Linking.openURL(media.public_url)} style={styles.mediaTile}>{media.media_type === "image" ? <Image source={{ uri: media.public_url }} style={styles.mediaImage} /> : <View style={styles.videoTile}><Text style={styles.videoIcon}>▶</Text><Text style={styles.videoLabel}>VIDEO</Text></View>}{isOwner ? <Pressable accessibilityLabel="Remove portfolio media" accessibilityRole="button" onPress={(event) => { event.stopPropagation(); void removePortfolioMedia(media); }} style={styles.removeMedia}><Text style={styles.removeMediaText}>×</Text></Pressable> : null}</Pressable> : <Pressable accessibilityLabel={`Add portfolio media ${position + 1}`} accessibilityRole="button" disabled={isUploadingMedia} key={`empty-${position}`} onPress={() => void addPortfolioMedia(position)} style={styles.emptyMediaTile}><Text style={styles.plus}>+</Text><Text style={styles.addMediaText}>Add media</Text></Pressable>; })}</View></View> : null}
-        {creator.equipment_setup ? <View style={styles.setupCard}><Text style={styles.setupHeading}>CREATOR SETUP</Text><Text selectable style={styles.setupText}>{creator.equipment_setup}</Text></View> : null}
-        <View style={styles.portfolioList}>{portfolioLinks.map((portfolioUrl, index) => <Pressable accessibilityRole="link" key={portfolioUrl} onPress={() => void openPortfolio(portfolioUrl)} style={styles.portfolioButton}><Text style={styles.portfolioText}>View portfolio {portfolioLinks.length > 1 ? index + 1 : ""}</Text></Pressable>)}</View>
-        <View style={styles.reviewSection}>
-          <Text style={styles.reviewHeading}>SURFER REVIEWS</Text>
-          {reviews.length === 0 ? <Text style={styles.noReviews}>This creator has not received a review yet.</Text> : reviews.map((review) => (
+
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{creator.display_name}</Text>
+          {creator.is_verified ? <IconSymbol color={theme.colors.accentText} name="checkmark.seal.fill" size={22} /> : null}
+        </View>
+        <Text style={styles.meta}>{creatorTitle(creator.services)} · {creator.city} · travels {creator.travel_miles} mi</Text>
+        <View style={styles.ratingRow}>
+          <IconSymbol color={theme.colors.star} name="star.fill" size={16} />
+          <Text style={styles.ratingValue}>{averageRating ? averageRating.toFixed(1) : "New"}</Text>
+          <Text style={styles.ratingCount}>{reviews.length ? `${reviews.length} ${reviews.length === 1 ? "review" : "reviews"} from booked sessions` : "No reviews yet"}</Text>
+        </View>
+
+        <Text style={styles.bio}>{creator.bio || "Surf sessions captured with a local eye and a focus on the moments that matter."}</Text>
+
+        {(portfolioMedia.length > 0 || isOwner) ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent work</Text>
+              {isOwner ? <Text style={styles.sectionHelp}>{isUploadingMedia ? "Uploading…" : `${portfolioMedia.length} of 6 added`}</Text> : null}
+            </View>
+            <View style={styles.mediaGrid}>
+              {Array.from({ length: isOwner ? 6 : portfolioMedia.length }, (_, position) => {
+                const media = portfolioMedia.find((item) => item.position === position);
+                return media ? (
+                  <Pressable accessibilityLabel={media.media_type === "video" ? "Open portfolio video" : "Open portfolio image"} accessibilityRole="button" key={media.id} onPress={() => void Linking.openURL(media.public_url)} style={styles.mediaTile}>
+                    {media.media_type === "image" ? <Image source={{ uri: media.public_url }} style={styles.mediaImage} /> : <View style={styles.videoTile}><IconSymbol color={theme.colors.text} name="play.fill" size={28} /></View>}
+                    {isOwner ? (
+                      <Pressable accessibilityLabel="Remove portfolio media" accessibilityRole="button" onPress={(event) => { event.stopPropagation(); void removePortfolioMedia(media); }} style={styles.removeMedia}>
+                        <IconSymbol color="#ffffff" name="xmark" size={16} />
+                      </Pressable>
+                    ) : null}
+                  </Pressable>
+                ) : (
+                  <Pressable accessibilityLabel={`Add portfolio media ${position + 1}`} accessibilityRole="button" disabled={isUploadingMedia} key={`empty-${position}`} onPress={() => void addPortfolioMedia(position)} style={styles.emptyMediaTile}>
+                    <IconSymbol color={theme.colors.textMuted} name="plus" size={24} />
+                    <Text style={styles.addMediaText}>Add photo or video</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
+        {creator.equipment_setup ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Gear</Text>
+            <Text selectable style={styles.body}>{creator.equipment_setup}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.linkRow}>
+          {portfolioLinks.map((portfolioUrl, index) => (
+            <AppButton key={portfolioUrl} onPress={() => void openPortfolio(portfolioUrl)} variant="secondary">
+              {portfolioLinks.length > 1 ? `Portfolio ${index + 1}` : "Full portfolio"}
+            </AppButton>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Reviews</Text>
+          {reviews.length === 0 ? <Text style={styles.muted}>No reviews yet. Reviews come only from booked sessions.</Text> : reviews.map((review) => (
             <View key={review.id} style={styles.review}>
-              <View style={styles.reviewTopRow}>
-                <Text accessibilityLabel={`${review.rating} out of 5 stars`} style={styles.reviewStars}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</Text>
-                <View style={styles.verifiedSession}><Text style={styles.verifiedSessionText}>✓ VERIFIED SESSION</Text></View>
+              <View style={styles.reviewTop}>
+                <Text accessibilityLabel={`${review.rating} out of 5 stars`} style={styles.reviewStars}>{"★".repeat(review.rating)}<Text style={styles.reviewStarsEmpty}>{"★".repeat(5 - review.rating)}</Text></Text>
+                <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</Text>
               </View>
-              {review.comment ? <Text selectable style={styles.reviewComment}>{review.comment}</Text> : <Text style={styles.ratingOnly}>Rating only</Text>}
-              <Text style={styles.reviewDate}>{new Date(review.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</Text>
+              {review.comment ? <Text selectable style={styles.body}>{review.comment}</Text> : <Text style={styles.muted}>Rating only</Text>}
             </View>
           ))}
         </View>
-        <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/report", params: { creatorId: creator.id } })} style={styles.reportButton}><Text style={styles.reportText}>Report this profile</Text></Pressable>
-        <View style={styles.bookingRow}><View><Text style={styles.rateLabel}>STARTING HOURLY RATE</Text><Text style={styles.rate}>{hourlyRate(creator)}</Text></View><Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/book", params: { creatorId: creator.id, ...(spot ? { spot } : {}) } })} style={styles.bookButton}><Text style={styles.bookButtonText}>Request to book</Text></Pressable></View>
+
+        <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/report", params: { creatorId: creator.id } })} style={styles.reportButton}>
+          <Text style={styles.reportText}>Report this profile</Text>
+        </Pressable>
+      </ScrollView>
+
+      <View style={[styles.bookBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+        <View style={[styles.bookBarInner, isWide && styles.contentWide]}>
+          <View>
+            <Text style={styles.rate}>{hourlyRate(creator)}</Text>
+            <Text style={styles.rateHint}>starting rate</Text>
+          </View>
+          <AppButton onPress={() => router.push({ pathname: "/book", params: { creatorId: creator.id, ...(spot ? { spot } : {}) } })} size="lg">Request to book</AppButton>
+        </View>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { alignSelf: "center", backgroundColor: "#061827", maxWidth: 640, minHeight: "100%", padding: 20, paddingBottom: 40, width: "100%" },
-  screenWide: { maxWidth: 1160, paddingBottom: 64, paddingHorizontal: 40 },
-  centered: { alignItems: "center", backgroundColor: "#061827", flex: 1, gap: 18, justifyContent: "center", padding: 24 },
-  backButton: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44, paddingRight: 24 },
-  backButtonText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },
-  hero: { alignItems: "center", backgroundColor: "#1d4259", borderRadius: 24, height: 300, justifyContent: "center", marginTop: 8 },
-  content: { paddingTop: 24 },
-  eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.4 },
-  title: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, lineHeight: 44, marginTop: 8 },
-  nameRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  verified: { backgroundColor: "rgba(86,214,201,.14)", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
-  verifiedText: { color: "#7ce0d6", fontSize: 10, fontWeight: "900", letterSpacing: .7 },
-  meta: { color: "#b9c9d6", fontSize: 15, lineHeight: 22, marginTop: 8 },
-  ratingSummary: { alignItems: "center", flexDirection: "row", gap: 7, marginTop: 12 },
-  ratingStar: { color: "#f5b841", fontSize: 18 },
-  ratingValue: { color: "#ffffff", fontSize: 16, fontWeight: "900" },
-  ratingCount: { color: "#91a8b8", fontSize: 13 },
-  description: { color: "#d9e5ec", fontSize: 17, lineHeight: 26, marginTop: 22 },
-  services: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 22 },
-  serviceBadge: { backgroundColor: "#1d4259", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  serviceText: { color: "#ffffff", fontSize: 13, fontWeight: "700" },
-  mediaSection: { marginTop: 22 },
-  mediaHeadingRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  mediaHeading: { color: "#91a8b8", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
-  mediaHelp: { color: "#698596", fontSize: 12 },
-  mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  mediaTile: { aspectRatio: 1.25, backgroundColor: "#102a39", borderRadius: 15, flexBasis: "30%", flexGrow: 1, maxWidth: 210, minWidth: 130, overflow: "hidden" },
-  mediaImage: { height: "100%", width: "100%" },
-  videoTile: { alignItems: "center", backgroundColor: "#17384b", flex: 1, gap: 6, justifyContent: "center" },
-  videoIcon: { color: "#56d6c9", fontSize: 25 },
-  videoLabel: { color: "#d9e5ec", fontSize: 10, fontWeight: "900", letterSpacing: 1 },
-  emptyMediaTile: { alignItems: "center", aspectRatio: 1.25, borderColor: "rgba(86,214,201,.35)", borderRadius: 15, borderStyle: "dashed", borderWidth: 1, flexBasis: "30%", flexGrow: 1, justifyContent: "center", maxWidth: 210, minWidth: 130 },
-  plus: { color: "#56d6c9", fontSize: 28, fontWeight: "400" },
-  addMediaText: { color: "#91a8b8", fontSize: 11, fontWeight: "800", marginTop: 2 },
-  removeMedia: { alignItems: "center", backgroundColor: "rgba(6,24,39,.88)", borderRadius: 14, height: 28, justifyContent: "center", position: "absolute", right: 7, top: 7, width: 28 },
-  removeMediaText: { color: "#ffffff", fontSize: 20, lineHeight: 22 },
-  setupCard: { backgroundColor: "rgba(86,214,201,.08)", borderColor: "rgba(86,214,201,.24)", borderCurve: "continuous", borderRadius: 17, borderWidth: 1, marginTop: 22, padding: 16 },
-  setupHeading: { color: "#7ce0d6", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
-  setupText: { color: "#d9e5ec", fontSize: 15, lineHeight: 23, marginTop: 8 },
-  portfolioList: { alignItems: "flex-start", gap: 9, marginTop: 22 },
-  portfolioButton: { borderColor: "rgba(124,224,214,0.5)", borderRadius: 12, borderWidth: 1, minHeight: 46, justifyContent: "center", paddingHorizontal: 16 },
-  portfolioText: { color: "#7ce0d6", fontSize: 14, fontWeight: "800" },
-  reviewSection: { borderTopColor: "rgba(255,255,255,.12)", borderTopWidth: 1, gap: 10, marginTop: 28, paddingTop: 22 },
-  reviewHeading: { color: "#91a8b8", fontSize: 11, fontWeight: "900", letterSpacing: 1.1 },
-  noReviews: { color: "#698596", fontSize: 14 },
-  review: { backgroundColor: "rgba(255,255,255,.05)", borderRadius: 15, padding: 14 },
-  reviewTopRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" },
-  reviewStars: { color: "#f5b841", fontSize: 16 },
-  verifiedSession: { backgroundColor: "rgba(86,214,201,.12)", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
-  verifiedSessionText: { color: "#7ce0d6", fontSize: 9, fontWeight: "900", letterSpacing: .6 },
-  reviewComment: { color: "#d9e5ec", fontSize: 14, lineHeight: 21, marginTop: 7 },
-  ratingOnly: { color: "#698596", fontSize: 13, fontStyle: "italic", marginTop: 7 },
-  reviewDate: { color: "#698596", fontSize: 11, marginTop: 9 },
-  reportButton: { alignSelf: "flex-start", marginTop: 18, minHeight: 42, justifyContent: "center" },
-  reportText: { color: "#91a8b8", fontSize: 13, fontWeight: "700" },
-  bookingRow: { alignItems: "center", borderTopColor: "rgba(255, 255, 255, 0.12)", borderTopWidth: 1, flexDirection: "row", gap: 16, justifyContent: "space-between", marginTop: 32, paddingTop: 24 },
-  rateLabel: { color: "#91a8b8", fontSize: 10, fontWeight: "800", letterSpacing: 1.1 },
-  rate: { color: "#ffffff", fontSize: 22, fontWeight: "800", marginTop: 3 },
-  bookButton: { backgroundColor: "#56d6c9", borderRadius: 16, justifyContent: "center", minHeight: 52, paddingHorizontal: 18 },
-  bookButtonText: { color: "#061827", fontSize: 15, fontWeight: "800" },
-});
+function createStyles(theme: AppTheme) {
+  const { colors, radius } = theme;
+  return StyleSheet.create({
+    screen: { backgroundColor: colors.background, flex: 1 },
+    content: { alignSelf: "center", maxWidth: 680, paddingBottom: 32, paddingHorizontal: 20, width: "100%" },
+    contentWide: { maxWidth: 900 },
+    centered: { alignItems: "center", backgroundColor: colors.background, flex: 1, gap: 16, justifyContent: "center", padding: 24 },
+    notFound: { ...theme.heading, color: colors.text, fontSize: 24 },
+    hero: { aspectRatio: 16 / 10, marginTop: 4, width: "100%" },
+    heroWide: { aspectRatio: 21 / 9 },
+    avatar: { alignSelf: "flex-start", borderColor: colors.background, borderRadius: 50, borderWidth: 5, marginLeft: 12, marginTop: -48 },
+    nameRow: { alignItems: "center", flexDirection: "row", gap: 8, marginTop: 10 },
+    name: { ...theme.display, color: colors.text, flexShrink: 1, fontSize: 34, lineHeight: 38 },
+    meta: { color: colors.textMuted, fontSize: 15, lineHeight: 22, marginTop: 6 },
+    ratingRow: { alignItems: "center", flexDirection: "row", gap: 6, marginTop: 10 },
+    ratingValue: { color: colors.text, fontSize: 15, fontWeight: "800" },
+    ratingCount: { color: colors.textMuted, fontSize: 14 },
+    bio: { color: colors.text, fontSize: 17, lineHeight: 26, marginTop: 22 },
+    section: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: 28, paddingTop: 22 },
+    sectionHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+    sectionTitle: { ...theme.heading, color: colors.text, fontSize: 19, marginBottom: 12 },
+    sectionHelp: { color: colors.textFaint, fontSize: 13, marginBottom: 12 },
+    body: { color: colors.text, fontSize: 15, lineHeight: 23 },
+    muted: { color: colors.textMuted, fontSize: 14, lineHeight: 21 },
+    mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    mediaTile: { aspectRatio: 1, backgroundColor: colors.surface, borderCurve: "continuous", borderRadius: radius.md, flexBasis: "31%", flexGrow: 1, maxWidth: 220, overflow: "hidden" },
+    mediaImage: { height: "100%", width: "100%" },
+    videoTile: { alignItems: "center", backgroundColor: colors.surfaceAlt, flex: 1, justifyContent: "center" },
+    emptyMediaTile: { alignItems: "center", aspectRatio: 1, borderColor: colors.borderStrong, borderCurve: "continuous", borderRadius: radius.md, borderStyle: "dashed", borderWidth: 1, flexBasis: "31%", flexGrow: 1, gap: 4, justifyContent: "center", maxWidth: 220, padding: 8 },
+    addMediaText: { color: colors.textMuted, fontSize: 12, fontWeight: "600", textAlign: "center" },
+    removeMedia: { alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 14, height: 28, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 28 },
+    linkRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 24 },
+    review: { borderBottomColor: colors.border, borderBottomWidth: 1, gap: 6, paddingVertical: 14 },
+    reviewTop: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
+    reviewStars: { color: colors.star, fontSize: 15, letterSpacing: 1 },
+    reviewStarsEmpty: { color: colors.border },
+    reviewDate: { color: colors.textFaint, fontSize: 12 },
+    reportButton: { alignSelf: "flex-start", justifyContent: "center", marginTop: 20, minHeight: 44 },
+    reportText: { color: colors.textFaint, fontSize: 13, fontWeight: "600", textDecorationLine: "underline" },
+    bookBar: { backgroundColor: colors.background, borderTopColor: colors.border, borderTopWidth: 1, paddingHorizontal: 20, paddingTop: 12 },
+    bookBarInner: { alignItems: "center", alignSelf: "center", flexDirection: "row", gap: 16, justifyContent: "space-between", maxWidth: 680, width: "100%" },
+    rate: { color: colors.text, fontSize: 22, fontVariant: ["tabular-nums"], fontWeight: "800" },
+    rateHint: { color: colors.textMuted, fontSize: 13 },
+  });
+}

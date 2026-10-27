@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
 import { formatSessionTime } from "@/utils/session-time";
 
 type SessionTimePickerProps = {
@@ -16,6 +18,8 @@ const timeOptions = Array.from({ length: 31 }, (_, index) => {
 });
 
 export function SessionTimePicker({ onChange, value }: SessionTimePickerProps) {
+  const theme = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -28,12 +32,11 @@ export function SessionTimePicker({ onChange, value }: SessionTimePickerProps) {
         style={({ pressed }) => [styles.timeButton, pressed && styles.pressed]}
       >
         <Text style={[styles.timeValue, !value && styles.placeholder]}>{value ? formatSessionTime(value) : "Choose a start time"}</Text>
-        <Text style={styles.timeIcon}>TIME</Text>
+        <IconSymbol color={theme.colors.textMuted} name="clock" size={20} />
       </Pressable>
 
       {isOpen ? (
         <View style={styles.panel}>
-          <Text style={styles.help}>Choose when you want the session to begin.</Text>
           <View style={styles.grid}>
             {timeOptions.map((time) => {
               const isSelected = time === value;
@@ -59,17 +62,18 @@ export function SessionTimePicker({ onChange, value }: SessionTimePickerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  timeButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.14)", borderCurve: "continuous", borderRadius: 16, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 58, paddingHorizontal: 16 },
-  pressed: { opacity: 0.8 },
-  timeValue: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
-  placeholder: { color: "#91a8b8", fontWeight: "500" },
-  timeIcon: { color: "#56d6c9", fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
-  panel: { backgroundColor: "#102a39", borderColor: "rgba(255,255,255,0.14)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, marginTop: 10, padding: 14 },
-  help: { color: "#9bb2c1", fontSize: 13, marginBottom: 12 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  option: { alignItems: "center", borderColor: "rgba(255,255,255,0.13)", borderRadius: 10, borderWidth: 1, minWidth: 84, paddingHorizontal: 9, paddingVertical: 10 },
-  optionSelected: { backgroundColor: "#56d6c9", borderColor: "#56d6c9" },
-  optionText: { color: "#d9e5ec", fontSize: 13, fontVariant: ["tabular-nums"], fontWeight: "700" },
-  optionTextSelected: { color: "#061827", fontWeight: "900" },
-});
+function createStyles(theme: AppTheme) {
+  const { colors, radius } = theme;
+  return StyleSheet.create({
+    timeButton: { alignItems: "center", backgroundColor: colors.surface, borderColor: colors.border, borderCurve: "continuous", borderRadius: radius.md, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 54, paddingHorizontal: 16 },
+    pressed: { opacity: 0.8 },
+    timeValue: { color: colors.text, fontSize: 16, fontWeight: "600" },
+    placeholder: { color: colors.textFaint, fontWeight: "500" },
+    panel: { backgroundColor: colors.surface, borderColor: colors.border, borderCurve: "continuous", borderRadius: radius.lg, borderWidth: 1, marginTop: 8, padding: 14 },
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    option: { alignItems: "center", backgroundColor: colors.background, borderColor: colors.border, borderCurve: "continuous", borderRadius: radius.sm, borderWidth: 1, minWidth: 84, paddingHorizontal: 9, paddingVertical: 10 },
+    optionSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    optionText: { color: colors.text, fontSize: 14, fontVariant: ["tabular-nums"], fontWeight: "600" },
+    optionTextSelected: { color: colors.onAccent, fontWeight: "800" },
+  });
+}

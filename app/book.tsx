@@ -5,19 +5,22 @@ import { SessionTimePicker } from "@/components/session-time-picker";
 import { formatSessionDate, formatSessionTime } from "@/utils/session-time";
 import { clearBookingDraft, loadBookingDraft, saveBookingDraft } from "@/utils/booking-draft";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { FadeInUp, ReduceMotion } from "react-native-reanimated";
-import FeedbackPressable from "@/components/feedback-pressable";
 import * as Haptics from "expo-haptics";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { AppButton } from "@/components/ui/app-button";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { TopBar } from "@/components/ui/top-bar";
+import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
 
 const sessionLengths = [1, 2, 3, 4] as const;
 
 export default function BookingScreen() {
   const { creatorId, spot } = useLocalSearchParams<{ creatorId: string; spot?: string }>();
-  const insets = useSafeAreaInsets();
+  const theme = useAppTheme();
+  const styles = useThemedStyles(createStyles);
   const [creator, setCreator] = useState<Creator | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [serviceType, setServiceType] = useState<(typeof serviceOptions)[number]>("Photography");
@@ -129,114 +132,176 @@ export default function BookingScreen() {
     router.push({ pathname: "/sign-in", params: { returnTo: "book", creatorId: creator.id, ...(spot ? { spot } : {}) } });
   }
 
-  if (isLoading) return <View style={styles.centered}><ActivityIndicator color="#56d6c9" /></View>;
-  if (!creator) return <View style={styles.centered}><Text selectable style={styles.title}>Creator not found</Text><Pressable accessibilityRole="button" onPress={() => router.back()}><Text style={styles.link}>Go back</Text></Pressable></View>;
+  if (isLoading) return <View style={styles.centered}><ActivityIndicator color={theme.colors.accent} /></View>;
+  if (!creator) {
+    return (
+      <View style={styles.centered}>
+        <Text selectable style={styles.title}>Creator not found</Text>
+        <AppButton onPress={() => router.back()} variant="secondary">Go back</AppButton>
+      </View>
+    );
+  }
 
   if (isSubmitted) {
     return (
-      <ScrollView contentContainerStyle={[styles.screen, styles.confirmationScreen]} contentInsetAdjustmentBehavior="automatic">
-        <StatusBar style="light" />
-        <Animated.View entering={FadeInUp.duration(240).reduceMotion(ReduceMotion.System)}>
-          <View style={styles.successIcon}><Text style={styles.successIconText}>✓</Text></View>
-          <Text style={styles.eyebrow}>REQUEST SENT</Text>
-          <Text selectable style={styles.confirmationTitle}>Your session request is on its way.</Text>
-          <Text selectable style={styles.confirmationBody}>{creator.display_name} can now review your request and reply through WaveLens.</Text>
-          <View style={styles.confirmationCard}>
-            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>CREATOR</Text><Text selectable style={styles.confirmationValue}>{creator.display_name}</Text></View>
-            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>WHEN</Text><Text selectable style={styles.confirmationValue}>{formatSessionDate(sessionDate)} at {formatSessionTime(sessionStartTime)}</Text></View>
-            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SURF SPOT</Text><Text selectable style={styles.confirmationValue}>{spot}</Text></View>
-            <View style={styles.confirmationRow}><Text style={styles.confirmationLabel}>SESSION</Text><Text selectable style={styles.confirmationValue}>{sessionHours} {sessionHours === 1 ? "hour" : "hours"} · {serviceType}</Text></View>
-          </View>
-          <FeedbackPressable accessibilityRole="button" haptic="light" onPress={() => router.replace("/requests")} style={styles.submitButton}><Text style={styles.submitText}>View my requests</Text></FeedbackPressable>
-          <Pressable accessibilityRole="button" onPress={() => router.replace("/creators")} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Browse more creators</Text></Pressable>
-        </Animated.View>
-      </ScrollView>
+      <SafeAreaView edges={["top", "left", "right"]} style={styles.page}>
+        <ScrollView contentContainerStyle={[styles.screen, styles.confirmationScreen]} contentInsetAdjustmentBehavior="automatic">
+          <Animated.View entering={FadeInUp.duration(240).reduceMotion(ReduceMotion.System)}>
+            <View style={styles.successIcon}><IconSymbol color={theme.colors.onAccent} name="checkmark" size={30} /></View>
+            <Text selectable style={styles.title}>Request sent.</Text>
+            <Text selectable style={styles.subtitle}>{creator.display_name} will review it and reply in WaveLens. You&apos;ll only pay once they accept.</Text>
+            <View style={styles.summary}>
+              <SummaryRow label="Creator" styles={styles} value={creator.display_name} />
+              <SummaryRow label="When" styles={styles} value={`${formatSessionDate(sessionDate)} at ${formatSessionTime(sessionStartTime)}`} />
+              <SummaryRow label="Where" styles={styles} value={spot ?? ""} />
+              <SummaryRow label="Session" styles={styles} value={`${sessionHours} ${sessionHours === 1 ? "hour" : "hours"} · ${serviceType}`} last />
+            </View>
+            <View style={styles.confirmationActions}>
+              <AppButton onPress={() => router.replace("/requests")} size="lg">View my requests</AppButton>
+              <AppButton onPress={() => router.replace("/creators")} size="lg" variant="secondary">Browse more creators</AppButton>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   const estimatedTotal = creator.starting_rate * sessionHours;
+  const dateMissing = hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate);
+  const timeMissing = hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime);
+  const contactMissing = hasAttemptedSubmit && contactDetails.trim().length < 2;
+  const availableServices = serviceOptions.filter((option) => creator.services.includes(option));
 
   return (
-    <View style={styles.page}>
-      <StatusBar style="light" />
-      <View style={[styles.statusBarBackdrop, { height: insets.top }]} />
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.page}>
       <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.screen} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled" onScrollBeginDrag={Keyboard.dismiss}>
-        <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Back</Text></Pressable>
-      <Text style={styles.eyebrow}>REQUEST A SESSION</Text>
-      <Text style={styles.title}>Book {creator.display_name}</Text>
-      <Text selectable style={styles.subtitle}>{hourlyRate(creator)} starting rate · {creator.city}</Text>
+        <TopBar back />
+        <Text style={styles.title}>Book {creator.display_name}</Text>
+        <View style={[styles.spotRow, hasAttemptedSubmit && !spot?.trim() && styles.spotRowInvalid]}>
+          <IconSymbol color={theme.colors.accentText} name="mappin" size={16} />
+          <Text selectable style={styles.spotText}>{spot || "No surf spot chosen. Go back and pick one."}</Text>
+        </View>
 
-      <Text style={styles.requiredNote}>Fields marked REQUIRED must be completed.</Text>
-      <View style={[styles.spotCard, hasAttemptedSubmit && !spot?.trim() && styles.fieldInvalid]}><View style={styles.labelRow}><Text style={styles.spotLabel}>SURF SPOT</Text><Text style={styles.required}>REQUIRED</Text></View><Text selectable style={styles.spotName}>{spot || "Choose a surf spot before sending"}</Text></View>
+        {availableServices.length > 1 ? (
+          <Field label="What do you need?" styles={styles}>
+            <View style={styles.segmented}>
+              {availableServices.map((option) => (
+                <Pressable accessibilityRole="radio" accessibilityState={{ checked: serviceType === option }} key={option} onPress={() => setServiceType(option)} style={[styles.segment, serviceType === option && styles.segmentSelected]}>
+                  <Text style={[styles.segmentText, serviceType === option && styles.segmentTextSelected]}>{option}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </Field>
+        ) : null}
 
-      <View style={styles.estimateCard}>
-        <View><Text style={styles.estimateLabel}>ESTIMATED STARTING TOTAL</Text><Text selectable style={styles.estimateTotal}>${estimatedTotal}</Text></View>
-        <Text selectable style={styles.estimateDetail}>{hourlyRate(creator)} × {sessionHours} {sessionHours === 1 ? "hour" : "hours"}</Text>
-      </View>
+        <Field label="How long?" styles={styles}>
+          <View style={styles.segmented}>
+            {sessionLengths.map((hours) => (
+              <Pressable accessibilityLabel={`${hours} ${hours === 1 ? "hour" : "hours"}`} accessibilityRole="radio" accessibilityState={{ checked: sessionHours === hours }} key={hours} onPress={() => setSessionHours(hours)} style={[styles.segment, sessionHours === hours && styles.segmentSelected]}>
+                <Text style={[styles.segmentText, sessionHours === hours && styles.segmentTextSelected]}>{hours} hr</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Field>
 
-      <View style={styles.section}><Text style={styles.label}>WHAT DO YOU NEED?</Text><View style={styles.options}>{serviceOptions.filter((option) => creator.services.includes(option)).map((option) => <Pressable accessibilityRole="button" key={option} onPress={() => setServiceType(option)} style={[styles.option, serviceType === option && styles.optionSelected]}><Text style={[styles.optionText, serviceType === option && styles.optionTextSelected]}>{option}</Text></Pressable>)}</View></View>
-      <View style={styles.section}><Text style={styles.label}>SESSION LENGTH</Text><View style={styles.options}>{sessionLengths.map((hours) => <Pressable accessibilityLabel={`${hours} ${hours === 1 ? "hour" : "hours"}`} accessibilityRole="button" key={hours} onPress={() => setSessionHours(hours)} style={[styles.option, sessionHours === hours && styles.optionSelected]}><Text style={[styles.optionText, sessionHours === hours && styles.optionTextSelected]}>{hours} {hours === 1 ? "hour" : "hours"}</Text></Pressable>)}</View></View>
-      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>SESSION DATE</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? styles.fieldInvalid : undefined}><SessionDatePicker onChange={setSessionDate} value={sessionDate} /></View>{hasAttemptedSubmit && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a date to continue.</Text> : null}</View>
-      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>START TIME</Text><Text style={styles.required}>REQUIRED</Text></View><View style={hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? styles.fieldInvalid : undefined}><SessionTimePicker onChange={setSessionStartTime} value={sessionStartTime} /></View>{hasAttemptedSubmit && !/^([01]\d|2[0-3]):[0-5]\d$/.test(sessionStartTime) ? <Text accessibilityRole="alert" style={styles.inlineError}>Choose a start time to continue.</Text> : null}</View>
-      <View style={styles.section}><Text style={styles.label}>A NOTE FOR {creator.display_name.toUpperCase()}</Text><TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Conditions, meeting point, and anything else they should know." placeholderTextColor="#698596" returnKeyType="done" submitBehavior="blurAndSubmit" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} /></View>
-      <View style={styles.section}><View style={styles.labelRow}><Text style={styles.label}>HOW SHOULD THEY REACH YOU?</Text><Text style={styles.required}>REQUIRED</Text></View><TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram handle" placeholderTextColor="#698596" returnKeyType="done" submitBehavior="blurAndSubmit" value={contactDetails} style={[styles.input,hasAttemptedSubmit&&contactDetails.trim().length<2&&styles.fieldInvalid]} />{hasAttemptedSubmit&&contactDetails.trim().length<2?<Text accessibilityRole="alert" style={styles.inlineError}>Add an email, phone number, or Instagram handle.</Text>:null}</View>
-      {formMessage ? <View accessibilityRole="alert" style={styles.formMessage}><Text selectable style={styles.formMessageText}>{formMessage}</Text>{needsAuthentication ? <Pressable accessibilityRole="button" onPress={() => void continueToSignIn()} style={styles.signInButton}><Text style={styles.signInButtonText}>Sign in with email</Text></Pressable> : null}</View> : null}
-      <FeedbackPressable accessibilityHint="Sends this booking request to the creator" accessibilityRole="button" disabled={isSubmitting} haptic="light" onPress={() => void submitRequest()} style={[styles.submitButton, isSubmitting && styles.buttonPressed]}><Text style={styles.submitText}>{isSubmitting ? "Sending..." : "Send booking request"}</Text></FeedbackPressable>
-      <Text selectable style={styles.footnote}>You will pay securely through WaveLens after the creator accepts your request.</Text>
+        <Field error={dateMissing ? "Pick a date to continue." : undefined} label="Date" styles={styles}>
+          <View style={dateMissing ? styles.invalid : undefined}><SessionDatePicker onChange={setSessionDate} value={sessionDate} /></View>
+        </Field>
+
+        <Field error={timeMissing ? "Pick a start time to continue." : undefined} label="Start time" styles={styles}>
+          <View style={timeMissing ? styles.invalid : undefined}><SessionTimePicker onChange={setSessionStartTime} value={sessionStartTime} /></View>
+        </Field>
+
+        <Field error={contactMissing ? "Add an email, phone number, or Instagram handle." : undefined} label="How can they reach you?" styles={styles}>
+          <TextInput accessibilityLabel="Contact details" autoCapitalize="none" autoCorrect={false} onChangeText={setContactDetails} placeholder="Email, phone, or Instagram" placeholderTextColor={theme.colors.textFaint} returnKeyType="done" submitBehavior="blurAndSubmit" value={contactDetails} style={[styles.input, contactMissing && styles.invalid]} />
+        </Field>
+
+        <Field label={`Anything ${creator.display_name} should know?`} optional styles={styles}>
+          <TextInput accessibilityLabel="Booking details" multiline onChangeText={setNotes} placeholder="Where to meet, what board you're on, the shots you want…" placeholderTextColor={theme.colors.textFaint} returnKeyType="done" submitBehavior="blurAndSubmit" textAlignVertical="top" value={notes} style={[styles.input, styles.notesInput]} />
+        </Field>
+
+        <View style={styles.total}>
+          <View>
+            <Text style={styles.totalLabel}>Estimated total</Text>
+            <Text selectable style={styles.totalDetail}>{hourlyRate(creator)} × {sessionHours} {sessionHours === 1 ? "hour" : "hours"}</Text>
+          </View>
+          <Text selectable style={styles.totalValue}>${estimatedTotal}</Text>
+        </View>
+
+        {formMessage ? (
+          <View accessibilityRole="alert" style={styles.formMessage}>
+            <Text selectable style={styles.formMessageText}>{formMessage}</Text>
+            {needsAuthentication ? <AppButton onPress={() => void continueToSignIn()} style={styles.signInButton}>Sign in with email</AppButton> : null}
+          </View>
+        ) : null}
+
+        <AppButton accessibilityHint="Sends this booking request to the creator" loading={isSubmitting} onPress={() => void submitRequest()} size="lg" style={styles.submit}>Send request</AppButton>
+        <Text selectable style={styles.footnote}>No charge yet. You pay through WaveLens after {creator.display_name} accepts.</Text>
       </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+type BookingStyles = ReturnType<typeof createStyles>;
+
+function Field({ label, optional = false, error, styles, children }: { label: string; optional?: boolean; error?: string; styles: BookingStyles; children: ReactNode }) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}{optional ? <Text style={styles.optional}>  Optional</Text> : null}</Text>
+      {children}
+      {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  page: { backgroundColor: "#061827", flex: 1 },
-  statusBarBackdrop: { backgroundColor: "#242a31" },
-  screen: { alignSelf: "center", backgroundColor: "#061827", flexGrow: 1, maxWidth: 680, padding: 20, paddingBottom: 44, width: "100%" },
-  centered: { alignItems: "center", backgroundColor: "#061827", flex: 1, gap: 16, justifyContent: "center" },
-  backButton: { alignSelf: "flex-start", justifyContent: "center", minHeight: 44, paddingRight: 24 },
-  backButtonText: { color: "#d9e5ec", fontSize: 16, fontWeight: "600" },
-  eyebrow: { color: "#7ce0d6", fontSize: 12, fontWeight: "800", letterSpacing: 1.5, marginTop: 16 },
-  title: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, marginTop: 10 },
-  subtitle: { color: "#b9c9d6", fontSize: 16, marginTop: 9 },
-  requiredNote: { color: "#91a8b8", fontSize: 12, marginTop: 22 },
-  spotCard: { backgroundColor: "rgba(255,255,255,0.055)", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, marginTop: 22, padding: 16 },
-  spotLabel: { color: "#91a8b8", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
-  spotName: { color: "#ffffff", fontSize: 17, fontWeight: "800", marginTop: 6 },
-  estimateCard: { alignItems: "center", backgroundColor: "rgba(86,214,201,0.1)", borderColor: "rgba(86,214,201,0.25)", borderCurve: "continuous", borderRadius: 20, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", marginTop: 14, padding: 17 },
-  estimateLabel: { color: "#8aede2", fontSize: 10, fontWeight: "900", letterSpacing: 1.05 },
-  estimateTotal: { color: "#ffffff", fontSize: 28, fontWeight: "900", letterSpacing: -0.8, marginTop: 5 },
-  estimateDetail: { color: "#d2f4ef", fontSize: 13, fontWeight: "700", textAlign: "right" },
-  section: { marginTop: 28 },
-  labelRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  label: { color: "#91a8b8", fontSize: 11, fontWeight: "800", letterSpacing: 1.1, marginBottom: 12 },
-  required: { color: "#7ce0d6", fontSize: 9, fontWeight: "900", letterSpacing: 1, marginBottom: 12 },
-  fieldInvalid: { borderColor: "#ffb15c", borderRadius: 17, borderWidth: 1 },
-  inlineError: { color: "#ffd4a3", fontSize: 13, marginTop: 8 },
-  options: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  option: { borderColor: "rgba(255,255,255,0.18)", borderRadius: 999, borderWidth: 1, paddingHorizontal: 15, paddingVertical: 10 },
-  optionSelected: { backgroundColor: "#56d6c9", borderColor: "#56d6c9" },
-  optionText: { color: "#d9e5ec", fontSize: 14, fontWeight: "700" },
-  optionTextSelected: { color: "#061827" },
-  input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.14)", borderRadius: 16, borderWidth: 1, color: "#ffffff", fontSize: 16, paddingHorizontal: 16, paddingVertical: 15 },
-  notesInput: { minHeight: 130 },
-  formMessage: { backgroundColor: "rgba(255,177,92,0.1)", borderColor: "rgba(255,177,92,0.32)", borderCurve: "continuous", borderRadius: 14, borderWidth: 1, marginTop: 22, padding: 14 },
-  formMessageText: { color: "#ffd4a3", fontSize: 14, lineHeight: 20 },
-  signInButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 12, justifyContent: "center", marginTop: 12, minHeight: 46 },
-  signInButtonText: { color: "#061827", fontSize: 14, fontWeight: "900" },
-  submitButton: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 18, justifyContent: "center", marginTop: 36, minHeight: 58 },
-  submitText: { color: "#061827", fontSize: 16, fontWeight: "800" },
-  footnote: { color: "#698596", fontSize: 12, lineHeight: 18, marginTop: 14, textAlign: "center" },
-  buttonPressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
-  link: { color: "#56d6c9", fontSize: 16, fontWeight: "700" },
-  confirmationScreen: { justifyContent: "center" },
-  successIcon: { alignItems: "center", backgroundColor: "#56d6c9", borderRadius: 30, height: 60, justifyContent: "center", marginBottom: 18, width: 60 },
-  successIconText: { color: "#061827", fontSize: 30, fontWeight: "900" },
-  confirmationTitle: { color: "#ffffff", fontSize: 38, fontWeight: "800", letterSpacing: -1.3, lineHeight: 43, marginTop: 10 },
-  confirmationBody: { color: "#b9c9d6", fontSize: 16, lineHeight: 24, marginTop: 12 },
-  confirmationCard: { backgroundColor: "rgba(255,255,255,0.055)", borderColor: "rgba(255,255,255,0.12)", borderCurve: "continuous", borderRadius: 20, borderWidth: 1, gap: 16, marginTop: 26, padding: 18 },
-  confirmationRow: { gap: 4 },
-  confirmationLabel: { color: "#698596", fontSize: 10, fontWeight: "900", letterSpacing: 1.1 },
-  confirmationValue: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
-  secondaryButton: { alignItems: "center", borderColor: "rgba(255,255,255,0.18)", borderCurve: "continuous", borderRadius: 18, borderWidth: 1, justifyContent: "center", marginTop: 12, minHeight: 54 },
-  secondaryButtonText: { color: "#ffffff", fontSize: 15, fontWeight: "800" },
-});
+function SummaryRow({ label, value, last = false, styles }: { label: string; value: string; last?: boolean; styles: BookingStyles }) {
+  return (
+    <View style={[styles.summaryRow, last && styles.summaryRowLast]}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text selectable style={styles.summaryValue}>{value}</Text>
+    </View>
+  );
+}
+
+function createStyles(theme: AppTheme) {
+  const { colors, radius } = theme;
+  return StyleSheet.create({
+    page: { backgroundColor: colors.background, flex: 1 },
+    screen: { alignSelf: "center", flexGrow: 1, maxWidth: 600, paddingBottom: 44, paddingHorizontal: 20, width: "100%" },
+    centered: { alignItems: "center", backgroundColor: colors.background, flex: 1, gap: 16, justifyContent: "center" },
+    title: { ...theme.display, color: colors.text, fontSize: 34, lineHeight: 38, marginTop: 8 },
+    subtitle: { color: colors.textMuted, fontSize: 16, lineHeight: 24, marginTop: 10 },
+    spotRow: { alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 6, marginTop: 10 },
+    spotRowInvalid: { borderBottomColor: colors.warning, borderBottomWidth: 2 },
+    spotText: { color: colors.accentText, fontSize: 15, fontWeight: "700" },
+    field: { marginTop: 26 },
+    label: { color: colors.text, fontSize: 15, fontWeight: "700", marginBottom: 10 },
+    optional: { color: colors.textFaint, fontSize: 13, fontWeight: "500" },
+    error: { color: colors.warning, fontSize: 13, marginTop: 8 },
+    invalid: { borderColor: colors.warning, borderRadius: radius.md, borderWidth: 1.5 },
+    segmented: { backgroundColor: colors.surface, borderCurve: "continuous", borderRadius: radius.md, flexDirection: "row", padding: 3 },
+    segment: { alignItems: "center", borderCurve: "continuous", borderRadius: Math.max(radius.md - 3, 2), flex: 1, justifyContent: "center", minHeight: 42 },
+    segmentSelected: { backgroundColor: colors.inverse },
+    segmentText: { color: colors.textMuted, fontSize: 14, fontWeight: "600" },
+    segmentTextSelected: { color: colors.onInverse, fontWeight: "700" },
+    input: { backgroundColor: colors.surface, borderColor: colors.border, borderCurve: "continuous", borderRadius: radius.md, borderWidth: 1, color: colors.text, fontSize: 16, minHeight: 52, paddingHorizontal: 16, paddingVertical: 14 },
+    notesInput: { minHeight: 110 },
+    total: { alignItems: "center", borderTopColor: colors.border, borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", marginTop: 32, paddingTop: 20 },
+    totalLabel: { color: colors.text, fontSize: 16, fontWeight: "700" },
+    totalDetail: { color: colors.textMuted, fontSize: 14, marginTop: 2 },
+    totalValue: { color: colors.text, fontSize: 28, fontVariant: ["tabular-nums"], fontWeight: "800" },
+    formMessage: { backgroundColor: colors.warningSoft, borderCurve: "continuous", borderRadius: radius.md, marginTop: 20, padding: 14 },
+    formMessageText: { color: colors.text, fontSize: 14, lineHeight: 20 },
+    signInButton: { marginTop: 12 },
+    submit: { marginTop: 20 },
+    footnote: { color: colors.textFaint, fontSize: 13, lineHeight: 19, marginTop: 12, textAlign: "center" },
+    confirmationScreen: { justifyContent: "center" },
+    confirmationActions: { gap: 10, marginTop: 28 },
+    successIcon: { alignItems: "center", backgroundColor: colors.accent, borderRadius: 30, height: 60, justifyContent: "center", marginBottom: 16, width: 60 },
+    summary: { backgroundColor: colors.surface, borderCurve: "continuous", borderRadius: radius.lg, marginTop: 24, paddingHorizontal: 16 },
+    summaryRow: { borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: "row", gap: 16, justifyContent: "space-between", paddingVertical: 14 },
+    summaryRowLast: { borderBottomWidth: 0 },
+    summaryLabel: { color: colors.textMuted, fontSize: 15 },
+    summaryValue: { color: colors.text, flexShrink: 1, fontSize: 15, fontWeight: "600", textAlign: "right" },
+  });
+}
