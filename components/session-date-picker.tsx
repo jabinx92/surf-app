@@ -129,7 +129,7 @@ function createStyles(theme: AppTheme) {
     weekRow: { flexDirection: "row" },
     weekday: { color: colors.textFaint, fontSize: 12, fontWeight: "700", paddingBottom: 8, textAlign: "center", width: "14.2857%" },
     daysGrid: { flexDirection: "row", flexWrap: "wrap" },
-    dayCell: { alignItems: "center", aspectRatio: 1, borderRadius: theme.name === "sport" ? radius.sm : 999, justifyContent: "center", width: "14.2857%" },
+    dayCell: { alignItems: "center", aspectRatio: 1, borderRadius: 999, justifyContent: "center", width: "14.2857%" },
     daySelected: { backgroundColor: colors.accent },
     dayText: { color: colors.text, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "600" },
     dayPast: { color: colors.textFaint, opacity: 0.5 },

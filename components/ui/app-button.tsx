@@ -63,7 +63,7 @@ function createStyles(theme: AppTheme) {
     quietActive: { opacity: 0.7 },
     disabled: { opacity: 0.5 },
     row: { alignItems: "center", flexDirection: "row", gap: 8 },
-    label: { fontSize: 15, fontWeight: "700", ...(theme.name === "sport" ? { letterSpacing: 0.4, textTransform: "uppercase" as const, fontWeight: "900" as const, fontSize: 14 } : null) },
-    labelLarge: { fontSize: theme.name === "sport" ? 15 : 16 },
+    label: { fontSize: 15, fontWeight: "700" },
+    labelLarge: { fontSize: 16 },
   });
 }

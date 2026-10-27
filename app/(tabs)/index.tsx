@@ -7,8 +7,7 @@ import FeedbackPressable from "@/components/feedback-pressable";
 import { AppButton } from "@/components/ui/app-button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { HeroVideo } from "@/components/ui/hero-video";
-import { homeHeroMedia } from "@/constants/media";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { homeHeroMedia, whyWaveLensMedia } from "@/constants/media";
 import { TopBar } from "@/components/ui/top-bar";
 import { useAppTheme, useThemedStyles, type AppTheme } from "@/lib/app-theme";
 
@@ -71,7 +70,6 @@ export default function HomeScreen() {
                     <Text style={styles.navLinkText}>For creators</Text>
                   </FeedbackPressable>
                 ) : null}
-                <ThemeToggle />
                 <FeedbackPressable accessibilityLabel="Account" accessibilityRole="button" haptic="none" onPress={() => router.push("/account")} style={styles.accountButton}>
                   <IconSymbol color={theme.colors.text} name="person.crop.circle" size={26} />
                 </FeedbackPressable>
@@ -90,7 +88,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <HeroVideo accessibilityLabel="Surfers riding a wave" key={theme.name} media={homeHeroMedia[theme.name]} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]}>
+            <HeroVideo accessibilityLabel="Surfers riding a wave" media={homeHeroMedia} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]}>
               <View style={styles.photoCaption}>
                 <IconSymbol color="#ffffff" name="camera.fill" size={14} />
                 <Text style={styles.photoCaptionText}>Photo, video, and drone, delivered to your phone</Text>
@@ -115,9 +113,9 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Mirror of the hero: clip on the left, words on the right. Uses the other look's clip so the page never shows the same one twice. */}
+          {/* Mirror of the hero: clip on the left, words on the right. */}
           <View style={[styles.hero, styles.aboutSection, isWide && styles.heroWide]}>
-            <HeroVideo accessibilityLabel="A surfer riding a wave, filmed by drone" key={`about-${theme.name}`} media={homeHeroMedia[theme.name === "navy" ? "sport" : "navy"]} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]}>
+            <HeroVideo accessibilityLabel="A surfer riding a wave, filmed by drone" media={whyWaveLensMedia} style={[styles.heroPhoto, isWide && styles.heroPhotoWide]}>
               <View style={styles.photoCaption}>
                 <IconSymbol color="#ffffff" name="camera.fill" size={14} />
                 <Text style={styles.photoCaptionText}>Find the photographers who know your break</Text>
@@ -211,7 +209,7 @@ function createStyles(theme: AppTheme) {
     creatorText: { color: colors.onInverse, fontSize: 15, lineHeight: 22, marginTop: 4, opacity: 0.75 },
     creatorButton: { alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.accent, borderCurve: "continuous", borderRadius: radius.md, justifyContent: "center", minHeight: 48, paddingHorizontal: 20 },
     creatorButtonActive: { backgroundColor: colors.accentPressed },
-    creatorButtonText: { color: colors.onAccent, fontSize: 15, fontWeight: "700", ...(theme.name === "sport" ? { fontWeight: "900" as const, letterSpacing: 0.4, textTransform: "uppercase" as const, fontSize: 14 } : null) },
+    creatorButtonText: { color: colors.onAccent, fontSize: 15, fontWeight: "700" },
 
     footer: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 32 },
     footerLinks: { flexDirection: "row", gap: 16 },

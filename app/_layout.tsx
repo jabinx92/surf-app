@@ -9,7 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import HomeBrandLink from "@/components/home-brand-link";
-import { AppThemeProvider, useAppTheme } from "@/lib/app-theme";
+import { useAppTheme } from "@/lib/app-theme";
 import { StyleSheet, View } from "react-native";
 import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,9 +26,7 @@ const screensWithTopBar = ["/", "/explore", "/location", "/creators", "/become-a
 export default function RootLayout() {
   return (
     <StripeProvider>
-      <AppThemeProvider>
-        <RootNavigator />
-      </AppThemeProvider>
+      <RootNavigator />
     </StripeProvider>
   );
 }

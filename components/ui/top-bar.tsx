@@ -44,7 +44,8 @@ function createStyles(theme: AppTheme) {
     brandName: {
       color: theme.colors.text,
       fontSize: 19,
-      ...(theme.name === "sport" ? { fontStyle: "italic" as const, fontWeight: "900" as const, letterSpacing: -0.2, textTransform: "uppercase" as const } : { fontWeight: "700" as const, letterSpacing: -0.4 }),
+      fontWeight: "700",
+      letterSpacing: -0.4,
     },
     right: { alignItems: "center", flexDirection: "row", gap: 10 },
   });

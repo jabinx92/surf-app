@@ -19,7 +19,7 @@ export default function AboutScreen() {
   const styles = useThemedStyles(createStyles);
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
-  const photo = homeHeroMedia[theme.name];
+  const photo = homeHeroMedia;
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>

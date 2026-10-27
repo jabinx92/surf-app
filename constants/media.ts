@@ -10,21 +10,20 @@ export type HeroMedia = {
 };
 
 // Free Pexels stock for now; swap for WaveLens creators' work once they give permission. Sources in assets/CREDITS.md.
-export const homeHeroMedia: Record<"navy" | "sport", HeroMedia> = {
-  navy: {
-    video: require("@/assets/videos/hero-navy.mp4"),
-    videoFocus: { x: 0.75, y: 0.5 }, // rider carves from 58% to 92% across
-    poster: require("@/assets/images/surf-water-level.jpg"),
-    posterAspect: 2000 / 1526,
-    posterFocus: { x: 0.46, y: 0.53 },
-  },
-  sport: {
-    video: require("@/assets/videos/hero-sport.mp4"),
-    videoFocus: { x: 0.45, y: 0.5 }, // rider stays between 34% and 56% across
-    poster: require("@/assets/images/surf-trio-aerial.jpg"),
-    posterAspect: 1,
-    posterFocus: { x: 0.56, y: 0.46 }, // three surfers span 16% to 96% across
-  },
+export const homeHeroMedia: HeroMedia = {
+  video: require("@/assets/videos/home-hero.mp4"),
+  videoFocus: { x: 0.75, y: 0.5 }, // rider carves from 58% to 92% across
+  poster: require("@/assets/images/surf-water-level.jpg"),
+  posterAspect: 2000 / 1526,
+  posterFocus: { x: 0.46, y: 0.53 },
+};
+
+export const whyWaveLensMedia: HeroMedia = {
+  video: require("@/assets/videos/why-wavelens.mp4"),
+  videoFocus: { x: 0.45, y: 0.5 }, // rider stays between 34% and 56% across
+  poster: require("@/assets/images/surf-trio-aerial.jpg"),
+  posterAspect: 1,
+  posterFocus: { x: 0.56, y: 0.46 }, // three surfers span 16% to 96% across
 };
 
 export const spotPickerMedia: HeroMedia = {
