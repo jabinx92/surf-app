@@ -1,4 +1,5 @@
 import CreatorCard from "@/components/creator-card";
+import { SpotWaitlist } from "@/components/spot-waitlist";
 import FeedbackPressable from "@/components/feedback-pressable";
 import { AppButton } from "@/components/ui/app-button";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -49,6 +50,9 @@ export default function CreatorsScreen() {
 
   useFocusEffect(useCallback(() => { void loadCreators(); }, [loadCreators]));
 
+  // Someone has marked this exact break in their weekly availability.
+  const hasLocalCreator = creators.some((creator) => creator.availability?.some((slot) => slot.surf_spot === spot));
+
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, isWide && styles.contentWide]}>
@@ -67,7 +71,7 @@ export default function CreatorsScreen() {
               <Text style={styles.spotText}>{spot}</Text>
             </View>
           ) : null}
-          <Text style={[styles.title, isWide && styles.titleWide]}>Local photographers</Text>
+          <Text style={[styles.title, isWide && styles.titleWide]}>{!spot || hasLocalCreator ? "Local photographers" : "Surf photographers"}</Text>
           <Text style={styles.subtitle}>Photographers, videographers, and drone pilots you can book for a session.</Text>
         </View>
 
@@ -79,16 +83,24 @@ export default function CreatorsScreen() {
             <Text selectable style={styles.stateText}>{message}</Text>
             <AppButton onPress={() => void loadCreators()} variant="secondary">Try again</AppButton>
           </View>
-        ) : creators.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.stateTitle}>No one&apos;s listed here yet.</Text>
-            <Text selectable style={styles.stateText}>We&apos;re still building the crew for this area. Check back soon — or if you shoot surf, apply to join.</Text>
-            <AppButton onPress={() => router.push("/become-a-creator")} variant="secondary">Apply as a creator</AppButton>
-          </View>
         ) : (
-          <View style={[styles.list, isWide && styles.listWide]}>
-            {creators.map((creator) => <View key={creator.id} style={isWide ? styles.listItemWide : undefined}><CreatorCard creator={creator} spot={spot} /></View>)}
-          </View>
+          <>
+            {spot && !hasLocalCreator ? <SpotWaitlist spot={spot} /> : null}
+            {creators.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.stateTitle}>You shoot surf?</Text>
+                <Text selectable style={styles.stateText}>We&apos;re still building the crew for this area. Apply to be one of the first photographers here.</Text>
+                <AppButton onPress={() => router.push("/become-a-creator")} variant="secondary">Apply as a creator</AppButton>
+              </View>
+            ) : (
+              <>
+                {spot && !hasLocalCreator ? <Text style={styles.listHeading}>Photographers who travel</Text> : null}
+                <View style={[styles.list, isWide && styles.listWide]}>
+                  {creators.map((creator) => <View key={creator.id} style={isWide ? styles.listItemWide : undefined}><CreatorCard creator={creator} spot={spot} /></View>)}
+                </View>
+              </>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -108,6 +120,7 @@ function createStyles(theme: AppTheme) {
     title: { ...theme.display, color: colors.text, fontSize: 36, lineHeight: 40 },
     titleWide: { fontSize: 48, lineHeight: 52 },
     subtitle: { color: colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 10, maxWidth: 520 },
+    listHeading: { ...theme.heading, color: colors.text, fontSize: 19, marginBottom: 14 },
     list: { gap: 16 },
     listWide: { flexDirection: "row", flexWrap: "wrap", gap: 20 },
     listItemWide: { flexBasis: "31%", flexGrow: 1, maxWidth: 380, minWidth: 270 },

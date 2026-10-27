@@ -19,7 +19,7 @@ export default function PrivacyScreen() {
         WaveLens helps surfers request photography and video sessions from approved local creators. This policy explains what information we handle when you use the app.
       </Section>
       <Section title="Information we collect">
-        We collect the email address used to create your account. When you request a session, we collect the selected creator, surf spot, service type, session date and length, your note, and the contact details you choose to provide. Creator applicants provide their profile details, portfolio link, services, hourly rates, biography, and travel range.
+        We collect the email address used to create your account. When you request a session, we collect the selected creator, surf spot, service type, session date and length, your note, and the contact details you choose to provide. Creator applicants provide their profile details, portfolio link, services, hourly rates, biography, and travel range. If you join a surf spot&apos;s waitlist, we collect your email address and the spot, and use them only to tell you when a photographer starts working there. You can ask us to remove you at any time through Support.
       </Section>
       <Section title="Location">
         If you allow location access, WaveLens uses your approximate current location only while the app is in use to sort nearby surf spots. We do not request background location access.
