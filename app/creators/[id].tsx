@@ -151,7 +151,7 @@ export default function CreatorProfileScreen() {
         <TopBar back />
         <PhotoPlaceholder accessibilityLabel={`Surf photo by ${creator.display_name}`} source={heroImage} style={[styles.hero, isWide && styles.heroWide]} />
         <View style={styles.avatar}>
-          <ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={88} />
+          <ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={176} />
         </View>
 
         <View style={styles.nameRow}>
@@ -252,11 +252,11 @@ function createStyles(theme: AppTheme) {
     notFound: { ...theme.heading, color: colors.text, fontSize: 24 },
     hero: { aspectRatio: 16 / 10, marginTop: 4, width: "100%" },
     heroWide: { aspectRatio: 21 / 9 },
-    avatar: { alignSelf: "flex-start", borderColor: colors.background, borderRadius: 50, borderWidth: 5, marginLeft: 12, marginTop: -48 },
-    nameRow: { alignItems: "center", flexDirection: "row", gap: 8, marginTop: 10 },
-    name: { ...theme.display, color: colors.text, flexShrink: 1, fontSize: 34, lineHeight: 38 },
-    meta: { color: colors.textMuted, fontSize: 15, lineHeight: 22, marginTop: 6 },
-    ratingRow: { alignItems: "center", flexDirection: "row", gap: 6, marginTop: 10 },
+    avatar: { alignSelf: "center", borderColor: colors.background, borderRadius: 93, borderWidth: 5, marginTop: -93 },
+    nameRow: { alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 12 },
+    name: { ...theme.display, color: colors.text, flexShrink: 1, fontSize: 34, lineHeight: 38, textAlign: "center" },
+    meta: { color: colors.textMuted, fontSize: 15, lineHeight: 22, marginTop: 6, textAlign: "center" },
+    ratingRow: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 10 },
     ratingValue: { color: colors.text, fontSize: 15, fontWeight: "800" },
     ratingCount: { color: colors.textMuted, fontSize: 14 },
     bio: { color: colors.text, fontSize: 17, lineHeight: 26, marginTop: 22 },

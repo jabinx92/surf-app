@@ -33,7 +33,7 @@ export default function CreatorCard({ creator, spot }: CreatorCardProps) {
         <View style={styles.price}><Text style={styles.priceText}>{hourlyRate(creator)}</Text></View>
       </PhotoPlaceholder>
       <View style={styles.avatar}>
-        <ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={56} />
+        <ProfileAvatar color={creator.avatar_color} imageUrl={creator.avatar_url} name={creator.display_name} size={112} />
       </View>
 
       <View style={styles.info}>
@@ -59,13 +59,13 @@ function createStyles(theme: AppTheme) {
     photo: { aspectRatio: 16 / 9, borderRadius: 0, width: "100%" },
     price: { backgroundColor: colors.background, borderCurve: "continuous", borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 6, position: "absolute", right: 12, top: 12 },
     priceText: { color: colors.text, fontSize: 14, fontVariant: ["tabular-nums"], fontWeight: "800" },
-    avatar: { borderColor: colors.surface, borderRadius: 32, borderWidth: 4, left: 14, marginTop: -32, position: "relative", width: 64 },
-    info: { paddingBottom: 18, paddingHorizontal: 18, paddingTop: 8 },
-    nameRow: { alignItems: "center", flexDirection: "row", gap: 6 },
+    avatar: { alignSelf: "center", borderColor: colors.surface, borderRadius: 60, borderWidth: 4, marginTop: -60 },
+    info: { alignItems: "center", paddingBottom: 18, paddingHorizontal: 18, paddingTop: 10 },
+    nameRow: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center" },
     name: { ...theme.heading, color: colors.text, flexShrink: 1, fontSize: 20 },
-    meta: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginTop: 4 },
-    services: { color: colors.textFaint, fontSize: 13, lineHeight: 19, marginTop: 2 },
-    available: { color: colors.accentText, fontSize: 13, fontWeight: "700", marginTop: 12 },
-    unavailable: { color: colors.textFaint, fontSize: 13, marginTop: 12 },
+    meta: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginTop: 4, textAlign: "center" },
+    services: { color: colors.textFaint, fontSize: 13, lineHeight: 19, marginTop: 2, textAlign: "center" },
+    available: { color: colors.accentText, fontSize: 13, fontWeight: "700", marginTop: 12, textAlign: "center" },
+    unavailable: { color: colors.textFaint, fontSize: 13, marginTop: 12, textAlign: "center" },
   });
 }
